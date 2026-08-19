@@ -17,6 +17,15 @@ import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-codin
 const SAIA_MODELS: ProviderModelConfig[] = [
   // ── Reasoning ────────────────────────────────────────────────────────
   {
+    id: "qwen3.8-2.4t-a95b",
+    name: "Qwen 3.8 2.4T A95B (SAIA)",
+    reasoning: true,
+    input: ["text"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 256_000,
+    maxTokens: 65_536,
+  },
+  {
     id: "qwen3.5-397b-a17b",
     name: "Qwen 3.5 397B (SAIA)",
     reasoning: true,
@@ -118,6 +127,15 @@ const SAIA_MODELS: ProviderModelConfig[] = [
   },
 
   // ── General ───────────────────────────────────────────────────────────
+  {
+    id: "qwen3.8-27b",
+    name: "Qwen 3.8 27B (SAIA)",
+    reasoning: false,
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 131_072,
+    maxTokens: 32_768,
+  },
   {
     id: "deepseek-v4-flash-0731",
     name: "DeepSeek V4 Flash (SAIA)",
