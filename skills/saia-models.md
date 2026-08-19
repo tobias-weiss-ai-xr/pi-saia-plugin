@@ -12,6 +12,7 @@ This plugin registers the SAIA provider with 16 models hosted on the Academic Cl
 
 | Model ID | Name | Ctx | Out | Vision |
 |----------|------|-----|-----|--------|
+| `saia/qwen3.8-2.4t-a95b` | Qwen 3.8 2.4T A95B | 256K | 64K | — |
 | `saia/qwen3.5-397b-a17b` | Qwen 3.5 397B | 128K | 32K | 🖼 |
 | `saia/qwen3.5-122b-a10b` | Qwen 3.5 122B | 128K | 32K | 🖼 |
 | `saia/qwen3-30b-a3b-instruct-2507` | Qwen 3 30B | 128K | 16K | — |
@@ -52,6 +53,7 @@ This plugin registers the SAIA provider with 16 models hosted on the Academic Cl
 
 | Model ID | Name | Ctx | Out | Vision |
 |----------|------|-----|-----|--------|
+| `saia/qwen3.8-27b` | Qwen 3.8 27B | 128K | 32K | 🖼 |
 | `saia/deepseek-v4-flash-0731` | DeepSeek V4 Flash | 128K | 16K | — |
 | `saia/qwen3.6-27b` | Qwen 3.6 27B | 128K | 16K | — |
 | `saia/glm-4.7` | GLM 4.7 | 128K | 16K | — |
@@ -61,12 +63,37 @@ This plugin registers the SAIA provider with 16 models hosted on the Academic Cl
 
 ## Quick Switch
 
-```bash
-# Best for agentic coding
-/model saia/glm-4.7
+### Model Aliases (Recommended)
 
+```bash
+# Best for coding
+/model saia/best-for-coding
+
+# Best quality / reasoning
+/model saia/best-quality
+/model saia/best-for-reasoning
+
+# Best for vision
+/model saia/best-for-vision
+
+# Best for agentic tasks
+/model saia/best-for-agentic
+
+# Fastest response
+/model saia/fastest
+
+# Fastest reasoning
+/model saia/fastest-reasoning
+
+# Budget/cost-effective
+/model saia/budget
+```
+
+### Specific Models
+
+```bash
 # Flagship reasoning
-/model saia/qwen3.5-397b-a17b
+/model saia/qwen3.8-2.4t-a95b
 
 # Code-specialized
 /model saia/qwen3-coder-next
