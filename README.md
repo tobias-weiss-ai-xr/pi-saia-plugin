@@ -7,7 +7,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Pi Package](https://img.shields.io/badge/pi-package-blue)](https://pi.dev/packages)
 
-A [pi package](https://pi.dev/docs/packages) that auto-registers all **16 SAIA Academic Cloud** models as a provider — no manual configuration needed.
+A [pi package](https://pi.dev/docs/packages) that auto-registers all **16+ SAIA Academic Cloud** models as a provider — no manual configuration needed.
+
+## 🔄 Auto-Sync Feature
+
+Models are automatically fetched from the SAIA API. To sync the latest models:
+
+```bash
+export SAIA_API_KEY=your_key
+./scripts/sync-saia-models.sh
+```
+
+See [`scripts/README.md`](scripts/README.md) for details on automation and force-include options.
 
 ## Features
 

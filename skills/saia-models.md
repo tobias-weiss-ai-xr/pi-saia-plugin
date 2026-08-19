@@ -4,7 +4,9 @@ description: SAIA (Academic Cloud Hessen) models available via this plugin.
 
 # SAIA Academic Cloud Models
 
-This plugin registers the SAIA provider with 16 models hosted on the Academic Cloud Hessen infrastructure.
+This plugin registers the SAIA provider with 16+ models hosted on the Academic Cloud Hessen infrastructure.
+
+> **Auto-Sync:** Models are automatically fetched from the SAIA API. Run `./scripts/sync-saia-models.sh` to update.
 
 ## Available Models
 
