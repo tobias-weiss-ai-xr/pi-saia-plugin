@@ -83,7 +83,6 @@ declare -A MODEL_METADATA=(
 )
 
 # Models to add even if not in API response (newly released, not yet deployed)
-# These will be added automatically if they're in metadata but not in API
 declare -a FORCE_INCLUDE_MODELS=(
     "qwen3.8-2.4t-a95b"
     "qwen3.8-27b"
@@ -129,53 +128,17 @@ categorize() {
     esac
 }
 
-# Generate model config entry
-generate_model_config() {
-    local id="$1"
-    local description="$2"
-    local reasoning="$3"
-    local input_types="$4"
-    local context="$5"
-    local max_tokens="$6"
-    
-    # Format input types as JSON array
-    local input_json=$(echo "$input_types" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
-    
-    echo "  {"
-    echo "    id: \"$id\","
-    echo "    name: \"$description\","
-    echo "    reasoning: $reasoning,"
-    echo "    input: $input_json,"
-    echo "    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },"
-    echo "    contextWindow: $context,"
-    echo "    maxTokens: $max_tokens,"
-    echo "  },"
-}
+# Get list of API model IDs
+API_MODEL_IDS=$(echo "$MODELS_JSON" | jq -r '.data[].id' | sort)
 
-# Generate alias entry
-generate_alias_config() {
-    local alias="$1"
-    local target="$2"
-    local target_meta="${MODEL_METADATA[$target]:-}"
-    
-    if [[ -z "$target_meta" ]]; then
-        return 1
+# Build final model list (API models + force-include)
+FINAL_MODELS="$API_MODEL_IDS"
+for model_id in "${FORCE_INCLUDE_MODELS[@]}"; do
+    if ! echo "$FINAL_MODELS" | grep -qx "$model_id"; then
+        FINAL_MODELS="$FINAL_MODELS"$'\n'"$model_id"
+        print_info "  Adding (not in API): $model_id"
     fi
-    
-    IFS='|' read -r reasoning input_types context max_tokens description <<< "$target_meta"
-    
-    local input_json=$(echo "$input_types" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
-    
-    echo "  {"
-    echo "    id: \"$alias\","
-    echo "    name: \"$alias → $target\","
-    echo "    reasoning: $reasoning,"
-    echo "    input: $input_json,"
-    echo "    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },"
-    echo "    contextWindow: $context,"
-    echo "    maxTokens: $max_tokens,"
-    echo "  },"
-}
+done
 
 # Get timestamp
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
@@ -207,12 +170,11 @@ import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-codin
 const SAIA_MODELS: ProviderModelConfig[] = [
 EOF
 
-# Track which models we've seen and last category
-declare -A SEEN_MODELS
+# Track last category for grouping
 LAST_CATEGORY=""
 
-# Process API models
-echo "$MODELS_JSON" | jq -r '.data[].id' | sort | while read -r model_id; do
+# Process all models
+echo "$FINAL_MODELS" | while read -r model_id; do
     [[ -z "$model_id" ]] && continue
     
     # Check if we have metadata for this model
@@ -228,34 +190,20 @@ echo "$MODELS_JSON" | jq -r '.data[].id' | sort | while read -r model_id; do
             LAST_CATEGORY="$category"
         fi
         
-        generate_model_config "$model_id" "$description" "$reasoning" "$input_types" "$context" "$max_tokens" >> "$EXTENSIONS_FILE.tmp"
-        SEEN_MODELS[$model_id]=1
+        # Format input types as JSON array
+        input_json=$(echo "$input_types" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+        
+        echo "  {" >> "$EXTENSIONS_FILE.tmp"
+        echo "    id: \"$model_id\"," >> "$EXTENSIONS_FILE.tmp"
+        echo "    name: \"$description\"," >> "$EXTENSIONS_FILE.tmp"
+        echo "    reasoning: $reasoning," >> "$EXTENSIONS_FILE.tmp"
+        echo "    input: $input_json," >> "$EXTENSIONS_FILE.tmp"
+        echo "    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }," >> "$EXTENSIONS_FILE.tmp"
+        echo "    contextWindow: $context," >> "$EXTENSIONS_FILE.tmp"
+        echo "    maxTokens: $max_tokens," >> "$EXTENSIONS_FILE.tmp"
+        echo "  }," >> "$EXTENSIONS_FILE.tmp"
     else
         print_warn "No metadata for model: $model_id (skipping)"
-    fi
-done
-
-# Add models that should be included even if not in API response yet
-# (e.g., newly released models not yet deployed to SAIA)
-print_info "Checking for models to force-include..."
-for model_id in "${FORCE_INCLUDE_MODELS[@]}"; do
-    if [[ -z "${SEEN_MODELS[$model_id]:-}" ]]; then
-        if [[ -n "${MODEL_METADATA[$model_id]:-}" ]]; then
-            print_info "  Adding (not in API): $model_id"
-            IFS='|' read -r reasoning input_types context max_tokens description <<< "${MODEL_METADATA[$model_id]}"
-            category=$(categorize "$model_id")
-            
-            # Add category comment if it's a new category
-            if [[ "$category" != "$LAST_CATEGORY" ]]; then
-                echo "" >> "$EXTENSIONS_FILE.tmp"
-                category_title=$(echo "$category" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1' | sed 's/ / /g')
-                echo "  // ── ${category_title} ────────────────────────────────────────────────────" >> "$EXTENSIONS_FILE.tmp"
-                LAST_CATEGORY="$category"
-            fi
-            
-            generate_model_config "$model_id" "$description" "$reasoning" "$input_types" "$context" "$max_tokens" >> "$EXTENSIONS_FILE.tmp"
-            SEEN_MODELS[$model_id]=1
-        fi
     fi
 done
 
@@ -266,9 +214,22 @@ echo "  // ── Aliases (convenience shortcuts) ──────────
 for alias in "${!ALIASES[@]}"; do
     target="${ALIASES[$alias]}"
     
-    # Only include alias if target model exists and was seen
-    if [[ -n "${SEEN_MODELS[$target]:-}" ]]; then
-        generate_alias_config "$alias" "$target" >> "$EXTENSIONS_FILE.tmp"
+    # Check if target model exists in our final list
+    if echo "$FINAL_MODELS" | grep -qx "$target"; then
+        IFS='|' read -r reasoning input_types context max_tokens description <<< "${MODEL_METADATA[$target]}"
+        
+        # Format input types as JSON array
+        input_json=$(echo "$input_types" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')
+        
+        echo "  {" >> "$EXTENSIONS_FILE.tmp"
+        echo "    id: \"$alias\"," >> "$EXTENSIONS_FILE.tmp"
+        echo "    name: \"$alias → $target\"," >> "$EXTENSIONS_FILE.tmp"
+        echo "    reasoning: $reasoning," >> "$EXTENSIONS_FILE.tmp"
+        echo "    input: $input_json," >> "$EXTENSIONS_FILE.tmp"
+        echo "    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }," >> "$EXTENSIONS_FILE.tmp"
+        echo "    contextWindow: $context," >> "$EXTENSIONS_FILE.tmp"
+        echo "    maxTokens: $max_tokens," >> "$EXTENSIONS_FILE.tmp"
+        echo "  }," >> "$EXTENSIONS_FILE.tmp"
     fi
 done
 
@@ -300,7 +261,7 @@ print_info "  Timestamp: $TIMESTAMP"
 
 # Show summary
 print_info "Model summary:"
-echo "$MODELS_JSON" | jq -r '.data[].id' | sort | while read -r id; do
+echo "$FINAL_MODELS" | while read -r id; do
     if [[ -n "${MODEL_METADATA[$id]:-}" ]]; then
         echo "  ✓ $id"
     else
