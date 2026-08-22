@@ -9,6 +9,11 @@
 
 A [pi package](https://pi.dev/docs/packages) that auto-registers all **16+ SAIA Academic Cloud** models as a provider — no manual configuration needed.
 
+**Other Platforms:**
+- [opencode-saia-plugin](https://github.com/tobias-weiss-ai-xr/opencode-saia-plugin) — SAIA provider for OpenCode
+- [zot-saia-plugin](https://github.com/tobias-weiss-ai-xr/zot-saia-plugin) — SAIA provider for zot CLI
+- [pi-l1-cache](https://github.com/tobias-weiss-ai-xr/pi-l1-cache) — Optional L1 caching extension (recommended with this plugin)
+
 ## 🔄 Auto-Sync Feature
 
 Models are automatically fetched from the SAIA API. To sync the latest models:
