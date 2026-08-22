@@ -168,13 +168,21 @@ pi-saia-plugin/
     └── saia.ts           # Legacy plugin (manual config generation)
 ```
 
-## Development
+## Caching
+
+For optional caching support, install the [`pi-l1-cache`](https://github.com/tobias-weiss-ai-xr/pi-l1-cache) plugin:
 
 ```bash
-git clone https://github.com/tobias-weiss-ai-xr/pi-saia-plugin.git
-cd pi-saia-plugin
-npm install
+pi install git:github.com/tobias-weiss-ai-xr/pi-l1-cache@main
 ```
+
+Features:
+- ~0.1ms L1 in-memory cache for model responses
+- 50MB RAM limit with automatic LRU eviction
+- CPU-aware auto-disable when system load > 80%
+- Manual management: `/l1-cache`, `/l1-cache stats`, `/l1-cache clear`
+
+
 
 Test locally:
 
