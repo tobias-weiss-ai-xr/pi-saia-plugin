@@ -50,7 +50,7 @@ const CATEGORY_GENERAL = "general"
 // Category lookup (from live API, synced 2025-08-13)
 // ---------------------------------------------------------------------------
 
-function categorizeModel(modelId: string): string {
+export function categorizeModel(modelId: string): string {
   const REASONING = [
     "qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3-30b-a3b-instruct-2507",
   ]
@@ -75,11 +75,11 @@ function categorizeModel(modelId: string): string {
 // Capabilities (from live API input/output modalities)
 // ---------------------------------------------------------------------------
 
-function canReason(modelId: string): boolean {
+export function canReason(modelId: string): boolean {
   return ["qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3-30b-a3b-instruct-2507"].includes(modelId)
 }
 
-function supportsAttachment(modelId: string): boolean {
+export function supportsAttachment(modelId: string): boolean {
   return [
     "qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3.6-35b-a3b",
     "gemma-4-31b-it", "medgemma-27b-it", "qwen3-omni-30b-a3b-instruct",
@@ -90,12 +90,12 @@ function supportsAttachment(modelId: string): boolean {
 // Token limits (from live API / documentation)
 // ---------------------------------------------------------------------------
 
-function getContextWindow(_modelId: string): number {
+export function getContextWindow(_modelId: string): number {
   // All models except medical/vision are 128K
   return 131_072
 }
 
-function getOutputWindow(modelId: string): number {
+export function getOutputWindow(modelId: string): number {
   const LARGE = ["qwen3.5-397b-a17b", "qwen3.5-122b-a10b"]
   const MEDIUM = [
     "qwen3-30b-a3b-instruct-2507", "devstral-2-123b-instruct-2512",
@@ -116,7 +116,7 @@ function getOutputWindow(modelId: string): number {
 // Descriptions
 // ---------------------------------------------------------------------------
 
-function getModelDescription(modelId: string): string {
+export function getModelDescription(modelId: string): string {
   const descriptions: Record<string, string> = {
     "qwen3.5-397b-a17b": "Qwen3.5 397B MoE — Flagship reasoning, best quality",
     "qwen3.5-122b-a10b": "Qwen3.5 122B MoE — Strong reasoning, fast",
@@ -142,7 +142,7 @@ function getModelDescription(modelId: string): string {
 // Metadata builder
 // ---------------------------------------------------------------------------
 
-function getModelMetadata(modelId: string): Record<string, any> {
+export function getModelMetadata(modelId: string): Record<string, any> {
   const metadata: Record<string, any> = {
     name: modelId,
     category: categorizeModel(modelId),
@@ -161,7 +161,7 @@ function getModelMetadata(modelId: string): Record<string, any> {
 // Aliases (updated to use current API models only)
 // ---------------------------------------------------------------------------
 
-const ALIASES: Record<string, string> = {
+export const ALIASES: Record<string, string> = {
   "best-for-coding": "qwen3-coder-next",
   "best-for-reasoning": "qwen3.5-397b-a17b",
   "best-for-agentic": "devstral-2-123b-instruct-2512",
@@ -175,7 +175,7 @@ const ALIASES: Record<string, string> = {
 // Profile defaults (updated to use current API models only)
 // ---------------------------------------------------------------------------
 
-function getProfileDefaultModel(profile: string): string {
+export function getProfileDefaultModel(profile: string): string {
   switch (profile) {
     case "production":
       return "glm-4.7"
@@ -189,7 +189,7 @@ function getProfileDefaultModel(profile: string): string {
   }
 }
 
-function includeInProfile(modelId: string, profile: string): boolean {
+export function includeInProfile(modelId: string, profile: string): boolean {
   switch (profile) {
     case "production":
       // All 16 models

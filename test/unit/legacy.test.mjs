@@ -1,0 +1,153 @@
+// Epic SAIA-LEGACY: the legacy pi plugin entry point (src/saia.ts) keeps its
+// categorization / capability / profile logic internally consistent and in sync
+// with the primary provider catalog.
+//
+// User stories covered:
+//   US5  As a maintainer I want model categorization (reasoning/agentic/coder/
+//        vision/medical/large-context/general) to be deterministic, so the
+//        generated config groups models correctly.
+//   US6  As a maintainer I want canReason()/supportsAttachment() capability
+//        flags to be consistent with categorizeModel(), so the documentation
+//        never lies about a model's abilities.
+//   US7  As a user I want profile selection (production/dev/budget) to filter
+//        models predictably, so `SAIA_PROFILE` switches the available set.
+//   US8  As a user I want aliases to resolve to real model ids, so legacy
+//        refresh never references a non-existent model.
+
+import assert from "node:assert/strict"
+import test from "node:test"
+import {
+  ALIASES,
+  canReason,
+  categorizeModel,
+  getContextWindow,
+  getModelDescription,
+  getModelMetadata,
+  getOutputWindow,
+  getProfileDefaultModel,
+  includeInProfile,
+  supportsAttachment,
+} from "../../src/saia.ts"
+
+const REAL_MODEL_IDS = [
+  "apertus-70b-instruct-2509",
+  "deepseek-v4-flash-0731",
+  "devstral-2-123b-instruct-2512",
+  "gemma-4-31b-it",
+  "glm-4.7",
+  "medgemma-27b-it",
+  "meta-llama-3.1-8b-instruct",
+  "mistral-medium-3.5-128b",
+  "openai-gpt-oss-120b",
+  "qwen3-30b-a3b-instruct-2507",
+  "qwen3.5-122b-a10b",
+  "qwen3.5-397b-a17b",
+  "qwen3.6-27b",
+  "qwen3.6-35b-a3b",
+  "qwen3-coder-next",
+  "qwen3-omni-30b-a3b-instruct",
+  "qwen3.8-2.4t-a95b",
+  "qwen3.8-27b",
+]
+
+const VALID_CATEGORIES = new Set([
+  "reasoning",
+  "agentic",
+  "coder",
+  "large-context",
+  "medical",
+  "vision",
+  "general",
+])
+
+test("US5: categorizeModel returns a valid category for every known model", () => {
+  for (const id of REAL_MODEL_IDS) {
+    const category = categorizeModel(id)
+    assert.ok(VALID_CATEGORIES.has(category), `${id} categorized as unknown '${category}'`)
+  }
+  assert.equal(categorizeModel("glm-4.7"), "general")
+  assert.equal(categorizeModel("devstral-2-123b-instruct-2512"), "agentic")
+  assert.equal(categorizeModel("qwen3-coder-next"), "coder")
+  assert.equal(categorizeModel("openai-gpt-oss-120b"), "large-context")
+  assert.equal(categorizeModel("medgemma-27b-it"), "medical")
+  assert.equal(categorizeModel("qwen3-omni-30b-a3b-instruct"), "vision")
+  assert.equal(categorizeModel("qwen3-30b-a3b-instruct-2507"), "reasoning")
+})
+
+test("US6: capability flags are consistent with categorization", () => {
+  // Reasoning models must be flagged and categorized as reasoning.
+  for (const id of ["qwen3-30b-a3b-instruct-2507", "qwen3.5-122b-a10b", "qwen3.5-397b-a17b"]) {
+    assert.equal(canReason(id), true, `${id} should be a reasoning model`)
+    assert.equal(categorizeModel(id), "reasoning")
+  }
+  // Non-reasoning models must not be flagged.
+  for (const id of ["glm-4.7", "qwen3-coder-next", "deepseek-v4-flash-0731", "meta-llama-3.1-8b-instruct"]) {
+    assert.equal(canReason(id), false, `${id} must not be a reasoning model`)
+  }
+  // Vision/attachment flags for representative models.
+  for (const id of [
+    "gemma-4-31b-it",
+    "medgemma-27b-it",
+    "qwen3-omni-30b-a3b-instruct",
+    "qwen3.6-35b-a3b",
+    "qwen3.5-122b-a10b",
+    "qwen3.5-397b-a17b",
+  ]) {
+    assert.equal(supportsAttachment(id), true, `${id} should support attachment`)
+  }
+  for (const id of ["glm-4.7", "deepseek-v4-flash-0731", "qwen3-coder-next", "openai-gpt-oss-120b"]) {
+    assert.equal(supportsAttachment(id), false, `${id} should not support attachment`)
+  }
+})
+
+test("US5/US6: getModelMetadata encodes category, limits and flags", () => {
+  const glm = getModelMetadata("glm-4.7")
+  assert.equal(glm.category, "general")
+  assert.equal(glm.limit.context, 131072)
+  assert.equal(glm.limit.output, 16384)
+  assert.ok(!("can_reason" in glm), "glm-4.7 must not advertise can_reason")
+  assert.ok(!("attachment" in glm), "glm-4.7 must not advertise attachment")
+
+  const reasoning = getModelMetadata("qwen3.5-397b-a17b")
+  assert.equal(reasoning.category, "reasoning")
+  assert.equal(reasoning.can_reason, true)
+  assert.equal(reasoning.attachment, true)
+  assert.equal(typeof getModelDescription("glm-4.7"), "string")
+})
+
+test("US7: profile default model and inclusion filter behave predictably", () => {
+  assert.equal(getProfileDefaultModel("production"), "glm-4.7")
+  assert.equal(getProfileDefaultModel("development"), "qwen3.6-27b")
+  assert.equal(getProfileDefaultModel("dev"), "qwen3.6-27b")
+  assert.equal(getProfileDefaultModel("budget"), "meta-llama-3.1-8b-instruct")
+  assert.equal(getProfileDefaultModel("unknown"), "glm-4.7")
+
+  // Production includes everything.
+  for (const id of REAL_MODEL_IDS) {
+    assert.equal(includeInProfile(id, "production"), true, `${id} should be in production`)
+  }
+  // Budget is a strict subset.
+  const budgetIncluded = REAL_MODEL_IDS.filter((id) => includeInProfile(id, "budget"))
+  assert.ok(budgetIncluded.length > 0 && budgetIncluded.length < REAL_MODEL_IDS.length)
+  assert.ok(budgetIncluded.includes("meta-llama-3.1-8b-instruct"))
+  assert.ok(budgetIncluded.includes("deepseek-v4-flash-0731"))
+  assert.ok(!budgetIncluded.includes("qwen3.8-2.4t-a95b"))
+})
+
+test("US8: every alias resolves to a real model id", () => {
+  const known = new Set(REAL_MODEL_IDS)
+  for (const [alias, target] of Object.entries(ALIASES)) {
+    assert.ok(typeof alias === "string" && alias.length > 0, "alias key must be non-empty")
+    assert.ok(known.has(target), `alias ${alias} -> unknown model ${target}`)
+  }
+  assert.equal(ALIASES["best-for-coding"], "qwen3-coder-next")
+  assert.equal(ALIASES["budget"], "meta-llama-3.1-8b-instruct")
+})
+
+test("token limit helpers return documented buckets", () => {
+  assert.equal(getContextWindow("glm-4.7"), 131072)
+  assert.equal(getOutputWindow("qwen3.5-397b-a17b"), 32768)
+  assert.equal(getOutputWindow("glm-4.7"), 16384)
+  assert.equal(getOutputWindow("gemma-4-31b-it"), 8192)
+  assert.equal(getOutputWindow("medgemma-27b-it"), 4096)
+})

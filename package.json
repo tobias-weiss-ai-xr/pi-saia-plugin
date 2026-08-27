@@ -8,6 +8,8 @@
   "scripts": {
     "lint": "tsc --noEmit",
     "tsc": "tsc --noEmit",
+    "test": "node --import tsx --test test/unit/*.test.mjs",
+    "test:smoke": "bash test/test.sh",
     "sync-models": "./scripts/sync-saia-models.sh"
   },
   "pi": {
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }
 }

@@ -17,7 +17,7 @@ import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-codin
 // Model catalog — Auto-synced from SAIA API
 // ---------------------------------------------------------------------------
 
-const SAIA_MODELS: ProviderModelConfig[] = [
+export const SAIA_MODELS: ProviderModelConfig[] = [
 
   // ── General ────────────────────────────────────────────────────
   {
