@@ -61,7 +61,7 @@ Examples:
   $(basename "$0") ascii                 # Show cool ASCII art
   $(basename "$0") story                # Generate a mini story
   $(basename "$0") riddle               # Get a riddle to solve
-  $(basename "$0") -m saia/qwen3.5-35b-a3b story  # Use specific model
+  $(basename "$0") -m saia/qwen3.6-35b-a3b story  # Use specific model
   SAIA_API_KEY=your_key $(basename "$0") custom "Write a haiku about coding"
 
 Note:
@@ -135,7 +135,7 @@ Choose a showcase (or use -h for help):
   ${GREEN}wisdom${NC}  - Wise advice
 
 To use a specific SAIA model:
-  $(basename "$0") -m saia/qwen3.5-35b-a3b ascii
+  $(basename "$0") -m saia/qwen3.6-35b-a3b ascii
 
 To use custom prompt:
   SAIA_API_KEY=your_key $(basename "$0") custom "Write a haiku about AI"
@@ -179,7 +179,7 @@ run_ascii_showcase() {
     if [ "$CAN_USE_PI" = true ]; then
         echo_info "Using pi with SAIA to generate custom ASCII art..."
         
-        local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+        local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
         if [ -n "$PROFILE" ]; then
             export SAIA_PROFILE="$PROFILE"
         fi
@@ -267,7 +267,7 @@ run_story_showcase() {
     if [ "$CAN_USE_PI" = true ]; then
         echo_info "Using pi with SAIA to create a mini adventure..."
         
-        local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+        local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
         if [ -n "$PROFILE" ]; then
             export SAIA_PROFILE="$PROFILE"
         fi
@@ -338,7 +338,7 @@ run_riddle_showcase() {
     if [ "$CAN_USE_PI" = true ]; then
         echo_info "Using pi to create a riddle..."
         
-        local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+        local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
         if [ -n "$PROFILE" ]; then
             export SAIA_PROFILE="$PROFILE"
         fi
@@ -399,7 +399,7 @@ run_joke_showcase() {
     if [ "$CAN_USE_PI" = true ]; then
         echo_info "Using pi to tell a joke..."
         
-        local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+        local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
         if [ -n "$PROFILE" ]; then
             export SAIA_PROFILE="$PROFILE"
         fi
@@ -463,7 +463,7 @@ run_wisdom_showcase() {
     if [ "$CAN_USE_PI" = true ]; then
         echo_info "Consulting the AI oracle..."
         
-        local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+        local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
         if [ -n "$PROFILE" ]; then
             export SAIA_PROFILE="$PROFILE"
         fi
@@ -537,7 +537,7 @@ run_custom_showcase() {
         exit 1
     fi
     
-    local model_to_use="${MODEL:-saia/qwen3.5-35b-a3b}"
+    local model_to_use="${MODEL:-saia/qwen3.6-35b-a3b}"
     if [ -n "$PROFILE" ]; then
         export SAIA_PROFILE="$PROFILE"
     fi

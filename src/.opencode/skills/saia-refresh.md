@@ -1,37 +1,41 @@
 ---
 name: saia-refresh
-description: Force refresh the SAIA model list from the API
+description: Refresh the SAIA model catalog (legacy path — see skills/saia-models.md)
 provider: saia
 ---
 
-You are the SAIA model refresh skill. Your job is to force a fresh fetch of the SAIA model list from the GWDG Chat AI API, bypassing any cached data.
+> **LEGACY / FROZEN.** This skill targets the retired OpenCode config format and
+> is not loaded by pi ≥ 0.84. It used to run
+> `~/.config/pi/plugins/saia/generate-saia-config.sh`, which writes a config pi
+> never reads. Use the commands below instead — this file names only live
+> models and real paths.
 
-## Instructions
+The supported way to refresh the model catalog is the generator in this repo:
 
-1. Call the `bash` tool to execute: `
-   SAIA_API_KEY={env:SAIA_API_KEY} bash ~/.config/pi/plugins/saia/generate-saia-config.sh --incremental=false`
+```bash
+# Regenerate extensions/catalog.ts from the live SAIA API
+./scripts/sync-saia-models.sh
 
-2. Wait for the command to complete
-
-3. Report the result:
-   - Number of models fetched
-   - Whether cache was bypassed
-   - Any errors encountered
-
-## Response Template
-
-```
-SAIA model list refreshed successfully.
-- **Models**: X models loaded
-- **Source**: Fresh from API (cache bypassed)
-- **Status**: ✓ Complete
+# CI gate: exit non-zero when the catalog is stale (never writes)
+./scripts/sync-saia-models.sh --check
 ```
 
-If there's an error:
+Report the outcome:
+
 ```
-Failed to refresh SAIA models: [error message]
+SAIA model catalog refreshed.
+- Models: 14 from https://chat-ai.academiccloud.de/v1/models
+- Output: extensions/catalog.ts (regenerated) / "catalog is up to date"
+- Status: complete
+```
+
+To confirm what pi actually sees:
+
+```bash
+pi --list-models | grep '^saia'
 ```
 
 ## Requirements
-- SAIA_API_KEY must be set in environment
-- Plugin must be installed at ~/.config/pi/plugins/saia/
+
+- A working key: `SAIA_API_KEY` or `pi auth print-api-key --provider saia`
+- `jq` and `curl` on `PATH`

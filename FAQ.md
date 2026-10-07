@@ -31,22 +31,22 @@ Check these things:
    echo $SAIA_API_KEY  # Should show your key
    ```
 
-2. **Plugin registration**: Check your `~/.config/pi/pi.json` has the plugin registered
-   ```json
-   {
-     "plugin": ["saia"]
-   }
+2. **Package registration**: Confirm the package is registered with pi
+   ```bash
+   pi list          # should include pi-saia-plugin
    ```
 
-3. **Plugin files**: Verify the plugin is installed
+3. **Models visible**: List what pi knows about
    ```bash
-   ls ~/.config/pi/plugins/saia/saia.ts
+   pi --list-models | grep '^saia'
    ```
 
-4. **Config file**: Check if the model config was generated
+4. **Key resolves**: pi must be able to read the key
    ```bash
-   ls ~/.config/pi/plugins/saia/pi-saia.json
+   pi auth print-api-key --provider saia
    ```
+   If this prints nothing, set `SAIA_API_KEY` or store the key once with
+   `pi auth`. A stale `auth.json` entry is the usual cause of a `401`.
 
 ### How do I verify my API key?
 
@@ -62,17 +62,15 @@ A successful response returns `200`. Any other code means your key is invalid or
 
 ### Can I install without the wizard?
 
-Yes! Run these commands:
+Yes — pi packages are a single command:
 
 ```bash
 # Clone
 git clone https://github.com/tobias-weiss-ai-xr/pi-saia-plugin.git
 cd pi-saia-plugin
 
-# Install
-mkdir -p ~/.config/pi/plugins/saia
-cp -r src/* ~/.config/pi/plugins/saia/
-chmod +x ~/.config/pi/plugins/saia/*.sh
+# Install into pi
+./install.sh          # or: pi install "$PWD"
 
 # Configure
 cat > ~/.config/pi/pi.json <<'EOF'
@@ -83,10 +81,14 @@ cat > ~/.config/pi/pi.json <<'EOF'
 }
 EOF
 
-# Generate models
-export SAIA_API_KEY=your_key_here
-bash ~/.config/pi/plugins/saia/generate-saia-config.sh
+# Verify
+pi --list-models | grep '^saia'
 ```
+
+> **Legacy note**: the `src/` tree, `schema/pi.schema.json` and
+> `pi.json.example` target the retired OpenCode config format
+> (`~/.config/pi/pi.json`, `provider.<id>.npm`). pi ≥ 0.84 does not read those
+> paths — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Usage
 
@@ -95,24 +97,27 @@ bash ~/.config/pi/plugins/saia/generate-saia-config.sh
 Use pi's model switching command:
 
 ```
+/model saia/deepseek-v4-flash-0731  # default model, 1M ctx
 /model saia/deepseek-v4-flash-0731  # Use DeepSeek V4 Flash
-/model saia/qwen3.5-35b-a3b   # Use Qwen3.5 35B
+/model saia/deepseek-v4-flash-0731   # Use Qwen3.5 35B
 /model saia/best-for-coding   # Use coding alias
 ```
 
 ### What are model aliases?
 
-Aliases provide shortcuts to models optimized for specific tasks:
+Aliases are registered as pi models and rewritten to their target id on the
+wire, so they behave exactly like the model they point at:
 
 | Alias | Points To | Use Case |
 |-------|-----------|----------|
 | `best-for-coding` | qwen3-coder-next | Code-specialized |
 | `best-for-reasoning` | qwen3.5-397b-a17b | Complex reasoning |
+| `best-quality` | glm-5.3-flash | Highest quality, 1M ctx |
 | `best-for-vision` | qwen3.8-27b | Image analysis |
-| `best-for-agentic` | glm-5.3-flash | Agentic coding |
-| `best-quality` | qwen3.5-397b-a17b | Highest quality |
+| `best-for-agentic` | devstral-2-123b-instruct-2512 | Agentic coding |
 | `fastest` | meta-llama-3.1-8b-instruct | Fastest response |
-| `budget` | deepseek-v4-flash-0731 | Lowest cost |
+| `fastest-reasoning` | qwen3.8-27b | Fast reasoning |
+| `budget` | deepseek-v4-flash-0731 | Lowest cost, 1M ctx |
 
 ### How do I see all available models?
 
@@ -122,10 +127,11 @@ Use the list models skill:
 /skill saia-list-models
 ```
 
-Or check the config file directly:
+Or ask pi directly:
 
 ```bash
-jq '.provider.saia.models | keys' ~/.config/pi/plugins/saia/pi-saia.json
+pi auth print-api-key --provider saia
+pi --list-models | grep '^saia'
 ```
 
 ### The model list is outdated. How do I refresh?
@@ -191,50 +197,52 @@ add to ~/.bashrc: export SAIA_PROFILE=development
 Currently, custom profiles aren't supported directly. However, you can:
 
 1. Use the development or production profile as a base
-2. Manually edit the generated `pi-saia.json` to remove unwanted models
+2. Edit `extensions/catalog.ts` (or the `metadata_for()` table in `scripts/sync-saia-models.sh`) to remove unwanted models
 3. Create a custom script based on `generate-saia-config.sh`
 
 ## Models
 
 ### Which model should I use?
 
-Use the optimize skill for recommendations:
-
-```
-/skill saia-optimize
-```
-
 Or refer to this quick guide:
 
 | Task | Best Model | Alternative |
 |------|------------|-------------|
-| Coding | qwen3-coder-next | devstral-2-123b-instruct-2512 |
-| Reasoning | qwen3.5-397b-a17b | qwen3.8-27b |
-| Vision | qwen3.8-27b | gemma-4-31b-it |
-| German | meta-llama-3.1-8b-instruct | gemma-4-31b-it |
-| Quick tasks | meta-llama-3.1-8b-instruct | gemma-4-31b-it |
-| Large context | glm-5.3-flash | deepseek-v4-flash-0731 |
+| Coding | `qwen3-coder-next` | `devstral-2-123b-instruct-2512` |
+| Reasoning | `qwen3.5-397b-a17b` | `qwen3.8-27b` |
+| Vision | `qwen3.8-27b` | `gemma-4-31b-it` |
+| Agentic / tool use | `glm-5.3-flash` | `devstral-2-123b-instruct-2512` |
+| Quick tasks | `meta-llama-3.1-8b-instruct` | `qwen3.6-35b-a3b` |
+| Large context | `glm-5.3-flash` (1M) | `deepseek-v4-flash-0731` (1M) |
 
 ### What models support reasoning?
 
-Models with reasoning enabled (from `data/saia-models.json`):
+Models whose responses contain a separate `reasoning` field
+(`canReason() === true`):
 
-- deepseek-v4-flash-0731
-- glm-5.3-flash
-- openai-gpt-oss-120b
-- qwen3.5-397b-a17b
-- qwen3.6-35b-a3b
-- qwen3.8-27b
+- `glm-5.3-flash`
+- `openai-gpt-oss-120b`
+- `qwen3.5-397b-a17b`
+- `qwen3.6-35b-a3b`
+- `qwen3.8-27b`
+
+SAIA validates `reasoning_effort`; the plugin folds unsupported levels into
+supported ones per model (see [README](README.md#thinking-levels)).
 
 ### What models support image input?
 
-Models with image input (from `data/saia-models.json`):
+Models that accept image content (`attachment: true`):
 
-- gemma-4-31b-it
-- glm-5.3-flash
-- qwen3.5-397b-a17b
-- qwen3.6-35b-a3b
-- qwen3-omni-30b-a3b-instruct
+- `gemma-4-31b-it`
+- `glm-5.3-flash`
+- `mistral-medium-3.5-128b`
+- `openai-gpt-oss-120b`
+- `qwen3-omni-30b-a3b-instruct`
+- `qwen3.5-397b-a17b`
+- `qwen3.6-35b-a3b`
+- `qwen3.8-27b`
+
+Text-only models answer `400 "<id> is not a multimodal model"`.
 
 ### What are the rate limits?
 
@@ -253,13 +261,15 @@ Rate limits are set by GWDG/SAIA. Contact their support if you need higher limit
 
 ### What context window do models have?
 
-Context windows come from the [GWDG docs table](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html)
-and are synced into `data/saia-models.json`:
+Context windows come from the SAIA model documentation:
 
-- **1M**: glm-5.3-flash, deepseek-v4-flash-0731
-- **256K–262K**: devstral-2, gemma-4-31b, mistral-medium-3.5, qwen3.5-397b, qwen3.6-35b, qwen3.8-27b, qwen3-30b, qwen3-coder-next, qwen3-omni-30b
-- **128K**: meta-llama-3.1-8b, openai-gpt-oss-120b
-- **65K**: apertus-70b-instruct-2509
+- **1M (1,048,576)**: `glm-5.3-flash`, `deepseek-v4-flash-0731`
+- **256K (262,144)**: `qwen3.5-397b-a17b`, `qwen3.6-35b-a3b`, `qwen3.8-27b`,
+  `gemma-4-31b-it`, `mistral-medium-3.5-128b`, `qwen3-coder-next`,
+  `qwen3-omni-30b-a3b-instruct`, `qwen3-30b-a3b-instruct-2507`,
+  `devstral-2-123b-instruct-2512`
+- **128K (131,072)**: `meta-llama-3.1-8b-instruct`, `openai-gpt-oss-120b`
+- **64K (65,536)**: `apertus-70b-instruct-2509`
 
 ## LiteLLM Proxy
 
@@ -327,9 +337,9 @@ This usually means the API returned unexpected data. Try:
 ### Models not showing in pi
 
 1. Restart pi
-2. Verify the plugin is loaded: check pi logs for "SAIA Plugin" messages
-3. Check `~/.config/pi/plugins/saia/pi-saia.json` exists
-4. Verify `~/.config/pi/pi.json` has `"plugin": ["saia"]`
+2. Verify the package is registered: `pi list` should include `pi-saia-plugin`
+3. Verify the models are visible: `pi --list-models | grep '^saia'`
+4. Verify the key resolves: `pi auth print-api-key --provider saia`
 
 ### Plugin not loading at all
 

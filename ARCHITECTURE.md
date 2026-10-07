@@ -1,5 +1,44 @@
 # Architecture
 
+> ## ⚠️ Read this first
+>
+> There are two layers in this repository:
+>
+> **1. The pi package (what pi actually loads)**
+>
+> | File | Role |
+> |------|------|
+> | `extensions/catalog.ts` | AUTO-GENERATED data: 14 verified models + alias map |
+> | `extensions/index.ts` | `pi.registerProvider("saia", …)` + `before_provider_request` alias rewrite hook |
+> | `scripts/sync-saia-models.sh` | Regenerates/verifies `catalog.ts` against the live API |
+> | `skills/saia-models.md` | `name: saia-models` skill |
+>
+> pi loads it via `pi install <path>` → `~/.pi/agent/settings.json`. No config
+> file is generated and no `~/.config/pi` path is involved.
+>
+> ### The pi-native request path
+>
+> ```
+> user message
+>   └─ pi picks a model id from SAIA_ALL_MODELS  (14 real ids + 8 alias entries)
+>       └─ before_provider_request hook: alias id → real id
+>           └─ HTTP POST {SAIA_BASE_URL}/chat/completions
+>               ├─ Authorization: Bearer $SAIA_API_KEY   (or the auth.json entry)
+>               ├─ messages[0].role = "system"           (never "developer")
+>               └─ reasoning_effort = thinkingLevelMap[pi level]   (absent if unmapped)
+> ```
+>
+> `SAIA_BASE_URL` overrides the endpoint (gateway, proxy, or the local mock used
+> by `test/integration/wire.test.mjs`). Every arrow in that diagram is asserted
+> by the hermetic wire suite — see [TESTING.md](TESTING.md#epic-saia-wire--the-wire-protocol-is-what-actually-matters).
+>
+> **2. The legacy OpenCode-format layer (`src/`, `schema/`, `pi.json.example`)**
+>
+> Described by the rest of this document. It targets `~/.config/pi/pi.json`
+> plus `provider.<id>.npm` (`@ai-sdk/openai-compatible`) and is **not read by
+> pi ≥ 0.84**. It is retained only for historical reference and is scheduled for
+> removal — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md#legacy-src-surface-opencode-format--not-used-by-pi).
+
 ## Overview
 
 The SAIA plugin for pi coding agent connects pi to SAIA (GWDG Chat AI) models through a layered architecture that provides caching, usage tracking, metrics, and profile-based model selection.
@@ -62,6 +101,18 @@ The SAIA plugin for pi coding agent connects pi to SAIA (GWDG Chat AI) models th
 ```
 
 ## Data Flow
+
+### The supported path
+
+See the request-path diagram in the "Read this first" note above. There is no
+cache, no config generation and no refresh step to reason about: the catalog is
+a committed, generated artifact, and `./scripts/sync-saia-models.sh --check`
+(pure read-only, safe in CI) is what detects drift from the live API.
+
+### The legacy path (below)
+
+Everything from here down describes **layer 2** — the OpenCode-format plugin.
+pi ≥ 0.84 does not load it, so read it as history, not as the current design.
 
 ### Startup Flow
 
@@ -158,8 +209,8 @@ pi-compatible skill files for SAIA management.
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `pi.json` | `~/.config/pi/` | Main pi configuration with plugin registration |
-| `pi-saia.json` | `~/.config/pi/plugins/saia/` | Master SAIA model configuration |
+| `pi.json` | `~/.config/pi/` | *Legacy* OpenCode-format config (not read by pi ≥ 0.84) |
+| `pi-saia.json` | `~/.config/pi/plugins/saia/` | *Legacy* generated SAIA model configuration |
 | `pi-saia-{profile}.json` | `~/.config/pi/plugins/saia/` | Profile-specific configs |
 | `pi.schema.json` | `schema/` | JSON schema for validation |
 
@@ -169,9 +220,9 @@ The plugin supports three model profiles:
 
 | Profile | Model Count | Default Model | Use Case |
 |---------|-------------|---------------|----------|
-| **production** | ~8-9 | glm-4.7 | Critical work, highest quality |
-| **development** | ~7-8 | qwen3.5-35b-a3b | Active development, balanced |
-| **budget** | ~4 | llama-3.1-8b-instruct | Cost optimization |
+| **production** | 14 | glm-5.3-flash | Critical work, highest quality |
+| **development** | 8 | qwen3-coder-next | Active development, balanced |
+| **budget** | 3 | meta-llama-3.1-8b-instruct | Cost optimization |
 
 ### Profile Configuration
 
@@ -256,7 +307,7 @@ Models are categorized based on their ID patterns and capabilities:
 | vision | vl, vision, internvl | Image/file input |
 | medical | med, gemma | Medical domain |
 | research | teuken, sauerkraut | German/European research |
-| agentic | glm-4.7, devstral | Tool use, agentic coding |
+| agentic | glm-5.3-flash, devstral | Tool use, agentic coding |
 | large-context | 235b, 675b, 120b | 128k+ context |
 | general | * | General-purpose |
 
@@ -322,7 +373,7 @@ The plugin tracks model usage for analytics and recommendations:
 
 **Example Entry:**
 ```json
-{"timestamp":"2025-01-15T10:30:00.000Z","projectRoot":"/home/user/my-project","modelId":"qwen3.5-35b-a3b","taskType":"coding","latencyMs":450}
+{"timestamp":"2025-01-15T10:30:00.000Z","projectRoot":"/home/user/my-project","modelId":"qwen3.6-35b-a3b","taskType":"coding","latencyMs":450}
 ```
 
 ## Metrics Collection
@@ -356,7 +407,7 @@ The plugin collects performance metrics for each model/API operation:
     "totalLatency": 3500,
     "lastUsed": "2025-01-15T10:00:00.000Z"
   },
-  "qwen3.5-35b-a3b": {
+  "qwen3.6-35b-a3b": {
     "count": 20,
     "success": 19,
     "errors": 1,
@@ -380,7 +431,7 @@ User preferences are stored and used for model recommendations:
 **Example:**
 ```json
 {
-  "favoriteModel": "glm-4.7",
+  "favoriteModel": "glm-5.3-flash",
   ".defaultProfile": "development"
 }
 ```
@@ -395,6 +446,16 @@ Project-specific context is stored for learning and recommendations:
 **Supported Context:**
 - `preferredModel`: Project-specific preferred model
 - Any other project-specific preferences
+
+## Environment variables
+
+| Variable | Effect |
+|----------|--------|
+| `SAIA_API_KEY` | API key; `$SAIA_API_KEY` is the template the provider registers, so the value is read when a request is made. A stored `auth.json` entry wins over a stale environment |
+| `SAIA_BASE_URL` | Overrides the endpoint. Trailing slashes trimmed. Blank values fall back to the canonical URL (so a stray `export SAIA_BASE_URL=` cannot break the plugin) |
+| `SAIA_MODELS_JSON` | Script-only: feed a captured `/v1/models` response to `sync-saia-models.sh` for offline generation/verification |
+| `SAIA_LEGACY` | Must be `1` to run the frozen `src/*.sh` scripts |
+| `PI_CODING_AGENT_DIR` | pi's own override for `~/.pi/agent`; the wire suite uses it to isolate itself from stored credentials |
 
 ## Error Handling
 

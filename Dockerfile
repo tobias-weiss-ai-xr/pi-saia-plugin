@@ -1,16 +1,20 @@
-# SAIA Plugin for pi Coding Agent - Docker Image
-# Multi-stage build for development, testing, and sandbox usage
+# SAIA provider for the pi coding agent — container image.
+#
+# The image installs pi and then registers this repository as a pi package, so
+# the container exercises exactly the same path a user takes
+# (`pi install <path>` -> ~/.pi/agent/settings.json). The retired
+# ~/.config/pi/plugins layout is intentionally not used: pi >= 0.84 never reads
+# it. See KNOWN_ISSUES.md.
 
-# Arguments
 ARG NODE_VERSION=24
 ARG ALPINE_VERSION=3.20
+ARG PI_VERSION=latest
 
 # =============================================================================
-# Stage 1: Base Builder - Install all build dependencies
+# Stage 1: builder — install deps, typecheck
 # =============================================================================
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-# Install system dependencies
 RUN apk add --no-cache \
     curl \
     jq \
@@ -21,74 +25,66 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata \
     python3 \
+    py3-yaml \
     py3-pip
 
-# Create app directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy manifests first for better layer caching
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install all dependencies (including dev dependencies)
-RUN npm ci 2>/dev/null || npm install 2>&1
+RUN npm ci 2>/dev/null || npm install
 
-# Copy source files
 COPY . .
 
-# Build TypeScript (optional, for testing)
+# Typecheck (non-fatal: a type error must not block a sandbox image)
 RUN npm run tsc -- --noEmit --skipLibCheck 2>&1 || echo "TypeScript check: warnings only"
 
 # =============================================================================
-# Stage 2: Runtime Image - Minimal production-ready image
+# Stage 2: runtime — pi + this package
 # =============================================================================
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}
 
-# Install runtime dependencies
+ARG PI_VERSION
+
 RUN apk add --no-cache \
     curl \
     jq \
-    bash \
     git \
+    bash \
     bc \
     ca-certificates \
     tzdata
 
-# Create non-root user (node user already has UID 1000)
-RUN adduser -D -s /bin/bash -G node pluginuser
-WORKDIR /home/pluginuser
+RUN npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}"
 
-# Copy from builder
+# Non-root user (the node user already owns UID 1000)
+RUN adduser -D -s /bin/bash -G node pluginuser
+
 COPY --from=builder --chown=node:node /app /home/pluginuser/app
 
-# Ensure correct permissions
-RUN chmod +x /home/pluginuser/app/src/*.sh /home/pluginuser/app/install*.sh
+RUN chmod +x /home/pluginuser/app/src/*.sh /home/pluginuser/app/install*.sh /home/pluginuser/app/scripts/*.sh
 
-# Switch to non-root user
 USER pluginuser
+ENV NODE_ENV=production
+ENV HOME=/home/pluginuser
 WORKDIR /home/pluginuser/app
 
-# Set up pi config directory structure
-RUN mkdir -p /home/pluginuser/.config/pi/plugins/saia && \
-    mkdir -p /home/pluginuser/.cache/saia
+# Register the package with pi, exactly like a user would.
+RUN pi install /home/pluginuser/app
 
-# Copy plugin files to pi plugins directory
-RUN cp -r /home/pluginuser/app/src/. /home/pluginuser/.config/pi/plugins/saia/ && \
-    cp -r /home/pluginuser/app/schema /home/pluginuser/.config/pi/plugins/saia/ && \
-    cp -r /home/pluginuser/app/skills /home/pluginuser/.config/pi/plugins/saia/ && \
-    chmod +x /home/pluginuser/.config/pi/plugins/saia/*.sh
-
-# Environment variables
-ENV NODE_ENV=production
-ENV SAIA_PROFILE="production"
-ENV LITELLM_PROXY_URL=""
-
-# Default command: start shell
-CMD ["sh"]
+# Default: an interactive shell with pi on PATH.
+CMD ["bash"]
 
 # =============================================================================
-# Build Instructions:
+# Build instructions
 # =============================================================================
 # Development:   docker build -t pi-saia-plugin --target builder .
+#                (this stage can run the full smoke suite: it has python3 +
+#                 PyYAML for the workflow checks, which the runtime stage lacks)
 # Production:    docker build -t pi-saia-plugin .
-# Multi-arch:    docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin:latest --push .
+# Verify:        docker run --rm -e SAIA_API_KEY=... pi-saia-plugin \
+#                  bash -c "pi --list-models | grep -c '^saia'"
+# Multi-arch:    docker buildx build --platform linux/amd64,linux/arm64 \
+#                  -t ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin:latest --push .

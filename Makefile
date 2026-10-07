@@ -1,242 +1,217 @@
-# SAIA Plugin - Makefile for common tasks
-# Use: make <target>
+# pi-saia-plugin — common tasks.  Use: make <target>
+#
+# The help text lives in a `define` block on purpose: a multi-line plain
+# assignment (the previous approach) is a *parse error* in every line after the
+# first, which made the whole Makefile fail with "missing separator" — every
+# target, including `make install`. test/test.sh now asserts this file parses
+# and that every target named in the help text exists.
 
-.PHONY: help build test lint clean docker dockertest sandbox install uninstall
+.DEFAULT_GOAL := help
 
-# Colors
 GREEN := \033[0;32m
 YELLOW := \033[1;33m
 NC := \033[0m
 
-HELP_TEXT = \
-$(YELLOW)SAIA Plugin for pi Coding Agent - Makefile$(NC)
+DOCKER_IMAGE   ?= ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin
+DOCKER_TAG     ?= latest
+DOCKER_TAG_DEV ?= latest-dev
+PI_APP_DIR     := /home/pluginuser/app
+
+define HELP_TEXT
+$(YELLOW)pi-saia-plugin — Makefile$(NC)
 
 Usage: make <target>
 
-Core Targets:
-  help           Show this help message
-  build          TypeScript type checking
-  test           Run all tests
-  lint           Run linter (eslint)
-  clean          Remove build artifacts
+Core:
+  help            Show this help message
+  install         Register this checkout with pi
+  uninstall       Remove it from pi
+  build           TypeScript type check (tsc --noEmit)
+  lint            Alias for build
+  test            Unit + hermetic wire tests (npm test)
+  test-smoke      Structure / package / skill / workflow smoke suite
+  verify          tsc + tests + smoke — what CI runs
+  sync-check      Verify the model catalog against the live SAIA API
+  sync-models     Regenerate the model catalog from the live SAIA API
+  clean           Remove build artifacts
 
-Docker Targets:
-  docker         Build Docker images
-  docker-dev     Build development Docker image
-  docker-push    Push Docker images to GHCR
-  docker-pull    Pull Docker images from GHCR
-  docker-run     Run sandbox container
-  docker-shell   Start shell in sandbox container
-  dockertest     Run tests in Docker sandbox
+Docker:
+  docker          Build the production and development images
+  docker-dev      Build the development image
+  docker-push     Push both images to GHCR
+  docker-pull     Pull both images from GHCR
+  docker-run      Shell in the sandbox image with this checkout mounted
+  dockertest      Run the smoke suite inside the image (read-only mount)
+  docker-validate Lint the Dockerfile (buildx --call=check)
+  docker-clean    Prune docker artifacts
 
-Sandbox Targets:
-  sandbox        Start interactive sandbox
-  sandbox-dev    Start development sandbox
-  sandbox-test   Run sandbox tests
+Sandbox:
+  sandbox         Start the interactive sandbox
+  sandbox-dev     Start the development sandbox
+  sandbox-test    Run the sandbox tests
+  sandbox-showcase  Showcase mode
+  video             Record docs/media/install.webm (needs ffmpeg + SAIA_API_KEY)
 
-Installation Targets:
-  install        Install plugin locally
-  uninstall      Remove plugin installation
+Version:
+  version         Print the current version
+  bump-major      Bump the major version
+  bump-minor      Bump the minor version
+  bump-patch      Bump the patch version
 
-Example:
-  make test
-  make docker docker-push
-  SAIA_API_KEY=your_key make sandbox
+Examples:
+  make verify
+  SAIA_API_KEY=... make sandbox
+endef
+export HELP_TEXT
 
+.PHONY: all help install uninstall build lint test test-smoke verify sync-check sync-models clean
+.PHONY: docker docker-dev docker-push docker-pull docker-run dockertest docker-validate docker-clean
+.PHONY: sandbox sandbox-dev sandbox-test sandbox-showcase
+.PHONY: version bump-major bump-minor bump-patch
 
 all: help
 
 # =============================================================================
-# Core Targets
+# Core
 # =============================================================================
 
-help: ## Show this help message
-	@echo "$(HELP_TEXT)"
+help:
+	@printf '%b\n' "$$HELP_TEXT"
 
-build: ## TypeScript type checking
+install:
+	@echo "$(GREEN)✓ Installing pi-saia-plugin...$(NC)"
+	pi install $(CURDIR)
+	@echo "  Verify:  pi --list-models | grep '^saia'"
+	@echo "  Set key: export SAIA_API_KEY=...   (or run: pi auth)"
+
+uninstall:
+	@echo "$(GREEN)✓ Removing pi-saia-plugin...$(NC)"
+	pi remove $(CURDIR)
+
+build:
 	@echo "$(GREEN)✓ Checking TypeScript types...$(NC)"
-	npx tsc --noEmit --skipLibCheck
+	npx tsc --noEmit
 
-# test: ## Run all tests
-# 	@echo "$(GREEN)✓ Running tests...$(NC)"
-# 	bash test/test.sh
+lint: build
 
-lint: ## Run linter
-	@echo "$(GREEN)✓ Running ESLint...$(NC)"
-	npx eslint src/ --ext .ts 2>/dev/null || echo "ESLint not installed. Run: npm install eslint --save-dev"
+test:
+	@echo "$(GREEN)✓ Running unit + hermetic wire tests...$(NC)"
+	npm test
 
-clean: ## Remove build artifacts
+test-smoke:
+	@echo "$(GREEN)✓ Running smoke suite...$(NC)"
+	bash test/test.sh
+
+verify:
+	@echo "$(GREEN)✓ Running full verification (tsc + tests + smoke)...$(NC)"
+	npm run verify
+
+sync-check:
+	@echo "$(GREEN)✓ Checking the catalog against the live SAIA API...$(NC)"
+	./scripts/sync-saia-models.sh --check
+
+sync-models:
+	@echo "$(GREEN)✓ Regenerating the model catalog...$(NC)"
+	./scripts/sync-saia-models.sh
+
+clean:
 	@echo "$(GREEN)✓ Cleaning build artifacts...$(NC)"
-	rm -rf node_modules/.cache
-	rm -rf .nyc_output
-	rm -rf coverage
-	rm -rf dist
-	rm -f *.tsbuildinfo
-	find src -name "*.js.map" -delete
-	find src -name "*.js" -delete
+	rm -rf dist coverage .nyc_output node_modules/.cache
+	rm -f ./*.tsbuildinfo
 
 # =============================================================================
-# Docker Targets
+# Docker
 # =============================================================================
 
-DOCKER_IMAGE := ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin
-DOCKER_TAG := latest
-DOCKER_TAG_DEV := latest-dev
-
-docker: ## Build Docker images
+docker:
 	@echo "$(GREEN)✓ Building production Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-
 	@echo "$(GREEN)✓ Building development Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG_DEV) --target builder .
 
-docker-dev: ## Build development Docker image only
+docker-dev:
 	@echo "$(GREEN)✓ Building development Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG_DEV) --target builder .
 
-docker-push: ## Push Docker images to GHCR
+docker-push:
 	@echo "$(GREEN)✓ Pushing production Docker image...$(NC)"
 	docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
-
 	@echo "$(GREEN)✓ Pushing development Docker image...$(NC)"
 	docker push $(DOCKER_IMAGE):$(DOCKER_TAG_DEV)
 
-docker-pull: ## Pull Docker images from GHCR
+docker-pull:
 	@echo "$(GREEN)✓ Pulling production Docker image...$(NC)"
 	docker pull $(DOCKER_IMAGE):$(DOCKER_TAG)
-
 	@echo "$(GREEN)✓ Pulling development Docker image...$(NC)"
 	docker pull $(DOCKER_IMAGE):$(DOCKER_TAG_DEV)
 
-docker-run: ## Run sandbox container
+docker-run:
 	@echo "$(GREEN)✓ Running sandbox container...$(NC)"
 	docker run -it --rm \
 		-e SAIA_API_KEY="$(SAIA_API_KEY)" \
-		-e SAIA_PROFILE="$(SAIA_PROFILE:-production)" \
-		-v $(CURDIR):/workspace \
-		-w /workspace \
-		$(DOCKER_IMAGE):$(DOCKER_TAG) sh
+		-v "$(CURDIR):$(PI_APP_DIR)" \
+		-w "$(PI_APP_DIR)" \
+		$(DOCKER_IMAGE):$(DOCKER_TAG) bash
 
-docker-shell: ## Start shell in sandbox container
-	@echo "$(GREEN)✓ Starting shell in sandbox container...$(NC)"
-	docker run -it --rm \
-		-e SAIA_API_KEY="$(SAIA_API_KEY)" \
-		-e SAIA_PROFILE="$(SAIA_PROFILE:-development)" \
-		-v $(CURDIR):/home/pluginuser/app \
-		-w /home/pluginuser/app \
-		$(DOCKER_IMAGE):$(DOCKER_TAG_DEV) sh
-
-dockertest: ## Run tests in Docker sandbox
-	@echo "$(GREEN)✓ Running tests in Docker sandbox...$(NC)"
+dockertest:
+	@echo "$(GREEN)✓ Running the smoke suite in the container...$(NC)"
+	# The dev image is used on purpose: it carries python3 + PyYAML, so the
+	# workflow/trigger checks actually run instead of skipping. The mount is
+	# read-only to prove the suite never writes to the checkout.
 	docker run --rm \
 		-e SAIA_API_KEY="mock-test-key" \
-		-e SAIA_PROFILE="budget" \
-		-v $(CURDIR):/home/pluginuser/app:ro \
-		$(DOCKER_IMAGE):$(DOCKER_TAG) \
-		bash -c "cd /home/pluginuser/app && bash test/test.sh"
+		-v "$(CURDIR):$(PI_APP_DIR):ro" \
+		-w "$(PI_APP_DIR)" \
+		$(DOCKER_IMAGE):$(DOCKER_TAG_DEV) \
+		bash test/test.sh
+
+docker-validate:
+	@echo "$(GREEN)✓ Linting the Dockerfile...$(NC)"
+	docker buildx build --call=check .
+
+docker-clean:
+	@echo "$(GREEN)✓ Cleaning docker artifacts...$(NC)"
+	docker image prune -f
+	docker builder prune -f
 
 # =============================================================================
-# Sandbox Targets
+# Sandbox
 # =============================================================================
 
-sandbox: ## Start interactive sandbox
+sandbox:
 	@echo "$(GREEN)✓ Starting interactive sandbox...$(NC)"
 	./sandbox/run.sh
 
-sandbox-dev: ## Start development sandbox
+sandbox-dev:
 	@echo "$(GREEN)✓ Starting development sandbox...$(NC)"
 	./sandbox/dev.sh
 
-sandbox-test: ## Run sandbox tests
+sandbox-test:
 	@echo "$(GREEN)✓ Running sandbox tests...$(NC)"
 	./sandbox/test.sh
 
-sandbox-showcase: ## Run showcase mode (ASCII art, stories, etc.)
+video:
+	@echo "$(CYAN)Recording the install walkthrough...$(NC)"
+	@command -v python3 >/dev/null 2>&1 || { echo "$(RED)python3 + Pillow are required$(NC)"; exit 1; }
+	@test -n "$(SAIA_API_KEY)" || { echo "$(RED)SAIA_API_KEY is required$(NC)"; exit 1; }
+	python3 scripts/make-install-video.py
+
+sandbox-showcase:
 	@echo "$(GREEN)✓ Running showcase mode...$(NC)"
 	./sandbox/showcase.sh
 
-sandbox-ascii: ## Show ASCII art showcase
-	@echo "$(GREEN)✓ Running ASCII showcase...$(NC)"
-	./sandbox/showcase.sh ascii
-
-sandbox-story: ## Show story showcase
-	@echo "$(GREEN)✓ Running story showcase...$(NC)"
-	./sandbox/showcase.sh story
-
-sandbox-joke: ## Tell a programming joke
-	@echo "$(GREEN)✓ Running joke showcase...$(NC)"
-	./sandbox/showcase.sh joke
-
 # =============================================================================
-# Installation Targets
+# Version
 # =============================================================================
 
-PLUGIN_DIR := ~/.config/pi/plugins/saia
+version:
+	@node -p "require('./package.json').version"
 
-install: ## Install plugin locally
-	@echo "$(GREEN)✓ Installing SAIA plugin...$(NC)"
-	mkdir -p $(PLUGIN_DIR)
-	cp -r src/* schema/* $(PLUGIN_DIR)/
-	chmod +x $(PLUGIN_DIR)/*.sh
-	cp pi.json.example ~/.config/pi/pi.json
-	echo "Plugin installed to $(PLUGIN_DIR)"
-	echo " Configure your API key: export SAIA_API_KEY=your_key"
+bump-major:
+	npm version major -m "chore: bump major version"
 
-uninstall: ## Remove plugin installation
-	@echo "$(GREEN)✓ Removing SAIA plugin...$(NC)"
-	rm -rf $(PLUGIN_DIR)
-	echo "Plugin removed from $(PLUGIN_DIR)"
+bump-minor:
+	npm version minor -m "chore: bump minor version"
 
-# =============================================================================
-# Utility Targets
-# =============================================================================
-
-.PHONY: docker-buildx docker-validate docker-clean
-
-docker-buildx: ## Build multi-arch Docker images
-	@echo "$(GREEN)✓ Building multi-architecture Docker images...$(NC)"
-	docker buildx create --use 2>/dev/null || true
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-t $(DOCKER_IMAGE):$(DOCKER_TAG) \
-		-t $(DOCKER_IMAGE):$(DOCKER_TAG_DEV) --target builder \
-		--push .
-
-docker-validate: ## Validate Dockerfile
-	@echo "$(GREEN)✓ Validating Dockerfile...$(NC)"
-	docker build --dry-run .
-
-docker-clean: ## Clean Docker artifacts
-	@echo "$(GREEN)✓ Cleaning Docker artifacts...$(NC)"
-	docker image prune -a
-	docker builder prune
-	docker system prune -f
-
-# =============================================================================
-# Version Targets
-# =============================================================================
-
-.PHONY: version bump-major bump-minor bump-patch
-
-version: ## Show current version
-	@echo "$(GREEN)✓ Current version:$(NC) $(shell cat package.json | jq -r '.version')"
-
-bump-major: ## Bump major version
-	@echo "$(GREEN)✓ Bumping major version...$(NC)"
-	npm version major -m "Bump major version"
-
-bump-minor: ## Bump minor version
-	@echo "$(GREEN)✓ Bumping minor version...$(NC)"
-	npm version minor -m "Bump minor version"
-
-bump-patch: ## Bump patch version
-	@echo "$(GREEN)✓ Bumping patch version...$(NC)"
-	npm version patch -m "Bump patch version"
-
-# =============================================================================
-# Help text for specific categories
-# =============================================================================
-
-help-%:
-	@echo "Available '$*' targets:"
-	@grep -E "^$*:" Makefile | grep -v " help-$*" | sed 's/:.*## /: /' | column -t -s ':' | sed 's/^  */  /'
-	@echo ""
+bump-patch:
+	npm version patch -m "chore: bump patch version"

@@ -1,53 +1,48 @@
 ---
 name: saia-health
-description: Check the health status of the SAIA API and plugin
+description: Check SAIA API + plugin health (legacy path — see skills/saia-models.md)
 provider: saia
 ---
 
-You are the SAIA health check skill. Your job is to verify that:
-1. The SAIA API is accessible
-2. The API key is valid
-3. The plugin is properly configured
+> **LEGACY / FROZEN.** This skill targets the retired OpenCode config format and
+> is not loaded by pi ≥ 0.84. Its checks used to look for
+> `~/.config/pi/plugins/saia/pi-saia.json` and `~/.config/pi/pi.json`, which a
+> modern pi never creates. The commands below are the real ones.
 
-## Instructions
+Verify each layer, in order:
 
-1. **API Connectivity Test**:
-   ```bash
-   curl -s -o /dev/null -w "%{http_code}" \
-     "https://chat-ai.academiccloud.de/v1/models" \
-     -H "Authorization: Bearer {env:SAIA_API_KEY}"
-   ```
+```bash
+# 1. API reachable + key accepted (expect HTTP 200, 14 models)
+curl -s -o /dev/null -w "%{http_code}\n" \
+  https://chat-ai.academiccloud.de/v1/models \
+  -H "Authorization: Bearer $(pi auth print-api-key --provider saia)"
 
-2. **Plugin Installation Check**:
-   ```bash
-   ls ~/.config/pi/plugins/saia/saia.ts
-   ```
+# 2. Package registered with pi
+pi list
 
-3. **Config File Check**:
-   ```bash
-   ls -la ~/.config/pi/plugins/saia/pi-saia.json
-   ```
+# 3. Provider + models visible
+pi --list-models | grep -c '^saia'        # expect 22 (14 models + 8 aliases)
 
-4. **PI Config Check**:
-   ```bash
-   grep -q '"saia"' ~/.config/pi/pi.json && echo "Plugin registered" || echo "Plugin NOT registered"
-   ```
+# 4. Key resolves
+pi auth print-api-key --provider saia
 
-## Health Status Report
+# 5. Catalog is not stale
+./scripts/sync-saia-models.sh --check
+```
 
-Based on the results, provide a comprehensive health report:
+## Health report
 
-- **API Status**: ✓ Reachable | ✗ Unreachable
-- **API Key**: ✓ Valid | ✗ Invalid/Expired
-- **Plugin Files**: ✓ Installed | ✗ Missing
-- **Model Config**: ✓ Present (X models) | ✗ Missing
-- **PI Registration**: ✓ Registered | ✗ Not registered
+- **API status**: reachable | unreachable
+- **API key**: valid | invalid/expired
+- **Package registered**: yes | no
+- **Models visible**: N (expect 22)
+- **Catalog fresh**: yes | stale
 
 ## Troubleshooting
 
-If any checks fail, provide specific remediation steps:
-- API unreachable: Check network, firewall, or SAIA server status
-- Invalid key: Verify SAIA_API_KEY value at https://chat-ai.academiccloud.de
-- Plugin missing: Re-run the install script
-- Config missing: Run generate-saia-config.sh
-- Not registered: Add "saia" to plugin array in pi.json
+| Symptom | Fix |
+|---------|-----|
+| HTTP 401 | Rotate the key in `auth.json` too — `pi auth` — a stale entry there beats the env var |
+| Model missing | `./scripts/sync-saia-models.sh` then `/reload` |
+| Empty output, no error | Check the rate limit: `x-ratelimit-remaining-hour` (30/min · 200/h · 1k/day). pi prints nothing on 429 |
+| Request hangs | SAIA capacity/cold start. Raise `retry.provider.timeoutMs` / `maxRetries` in `~/.pi/agent/settings.json` |

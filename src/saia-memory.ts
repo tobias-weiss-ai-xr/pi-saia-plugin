@@ -1,5 +1,9 @@
-// Memory layer utilities for SAIA plugin
-// Provides caching, usage tracking, metrics, and preferences for pi
+// Memory layer utilities for the SAIA plugin (LEGACY / FROZEN).
+//
+// Used by src/saia.ts, which targets the retired OpenCode config layout that
+// pi >= 0.84 does not read. The cache/preference paths below point at
+// ~/.cache/saia and ~/.config/pi and are inert for a modern pi install; the
+// helpers are still unit-tested (US9/US10). See KNOWN_ISSUES.md.
 
 import path from "node:path"
 import os from "node:os"

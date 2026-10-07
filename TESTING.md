@@ -29,6 +29,8 @@ The unit suite lives in `test/unit/`:
 | `test/unit/hygiene.test.mjs` | SAIA-HYGIENE | US19, US20, US21 |
 | `test/unit/docs.test.mjs` | SAIA-DOCS | US22, US23, US24 |
 | `test/unit/contract.test.mjs` | SAIA-CONTRACT | US25, US26 |
+| `test/unit/provider.test.mjs` | SAIA-PROVIDER | US27, US28, US29, US30 |
+| `test/integration/wire.test.mjs` | SAIA-PROVIDER | US27, US28, US29, US30 (on the wire) |
 
 ---
 
@@ -277,3 +279,63 @@ The unit suite lives in `test/unit/`:
 ### US26 — Provenance fields are present and well-formed
 - **Test:** `contract.test.mjs` → "provenance fields are present and
   well-formed" (parseable generated_at, https source URLs).
+
+---
+
+## Epic SAIA-PROVIDER — what the plugin sends on the wire is correct
+
+> As a pi user I want the model id, message roles, thinking effort and endpoint
+> that leave my machine to be ones SAIA actually accepts, so an alias is not an
+> opaque 404 and `--thinking` is not a 400.
+
+These invariants live in two layers: `test/unit/provider.test.mjs` checks the
+*generated provider* with no network, no key and no `pi` binary (so CI always
+runs it), and `test/integration/wire.test.mjs` runs the real `pi` binary against
+`test/mock-saia-server.mjs` — also without a key — to assert what actually goes
+over the wire.
+
+### US27 — Aliases resolve instead of 404ing
+- **Given** an alias id such as `best-for-coding`
+- **When** pi sends the request
+- **Then** the payload carries the real model id (`qwen3-coder-next`), the alias
+  id never reaches SAIA, and the alias entry advertises exactly the capabilities
+  of its target (context window, output limit, modalities, reasoning flag).
+- **Guard:** a `before_provider_request` hook emitted by the generator. Without
+  it every alias returns `404 Model Not Found`, because pi forwards an
+  unrecognised model id verbatim.
+- **Test:** `provider.test.mjs` → "the provider rewrites alias ids on the wire";
+  `wire.test.mjs` → "every alias is rewritten to its target model id" (all 8).
+
+### US28 — Thinking levels land on values the vendor accepts
+- **Given** `--thinking minimal` on `openai-gpt-oss-120b`
+- **Then** pi must not send `minimal`: that backend answers `400 ...
+  reasoning_effort='minimal' is not supported by Harmony. Supported values are:
+  high, medium, low.`
+- **And** `--thinking max` on `glm-5.3-flash` must actually send `max` — pi's
+  default mapping clamps `xhigh`/`max` down to `high`, which makes maximum effort
+  unreachable.
+- **Guard:** `thinkingLevelMap`, generated from the curated `effort.values` in
+  `scripts/reasoning-models.json` (name match first, then nearest value, ties
+  towards more effort).
+- **Test:** `provider.test.mjs` → "a thinking-level map only uses values the
+  vendor API accepts"; `wire.test.mjs` → "--thinking sends a reasoning_effort the
+  vendor accepts" (all six levels on `openai-gpt-oss-120b`).
+
+### US29 — The endpoint is overridable, blank falls back
+- **Given** `SAIA_BASE_URL` set to a gateway, a proxy or `http://127.0.0.1:<port>`
+- **Then** the provider uses it; given a blank/whitespace value it falls back to
+  the canonical URL instead of producing `https://` garbage.
+- **Why it matters beyond users:** the override is what makes the hermetic wire
+  suite possible at all — without it there is no way to test the two bugs above
+  without a key and a shared HPC service.
+- **Test:** `provider.test.mjs` → "$SAIA_BASE_URL overrides the endpoint"; every
+  `wire.test.mjs` case runs through the override.
+
+### US30 — The system prompt is never sent as `developer`
+- **Given** any model
+- **Then** the request carries a `system` message and never a `developer` one —
+  SAIA answers `400 {"message":"Unexpected message role."}` for the OpenAI
+  `developer` role, which pi sends unless the model declares
+  `compat.supportsDeveloperRole = false`.
+- **Test:** `wire.test.mjs` → "the system prompt is sent as `system`, never
+  `developer`".

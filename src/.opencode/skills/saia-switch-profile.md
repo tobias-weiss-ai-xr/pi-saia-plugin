@@ -4,6 +4,12 @@ description: Switch between SAIA profiles (production, development, budget)
 provider: saia
 ---
 
+
+> **LEGACY / FROZEN.** This skill targets the retired OpenCode config format and
+> is not loaded by pi ≥ 0.84. `SAIA_PROFILE` only affects the frozen
+> `src/generate-saia-config.sh` path; pi itself has no profile concept — use
+> `/model` or `--model` instead.
+
 You are the SAIA profile switcher skill. Your job is to help users switch between different SAIA model profiles.
 
 ## Available Profiles

@@ -4,6 +4,13 @@ description: List all available SAIA models with metadata
 provider: saia
 ---
 
+
+> **LEGACY / FROZEN — NOT USED BY pi ≥ 0.84.** This file targets the retired
+> OpenCode config format and is not loaded by pi. The skill pi actually loads
+> is [`skills/saia-models.md`](../../../skills/saia-models.md). It is kept in
+> sync with the generated catalog so the repository never advertises a model
+> that the SAIA API does not serve.
+
 You are the SAIA model lister skill. Your job is to display all available SAIA models with their metadata in a readable format.
 
 ## Instructions
@@ -46,7 +53,6 @@ You are the SAIA model lister skill. Your job is to display all available SAIA m
 - `saia/best-quality` → qwen3.5-397b-a17b
 - `saia/fastest` → llama-3.1-8b-instruct
 - `saia/budget` → llama-3.1-8b-instruct
-- `saia/best-german` → llama-3.1-sauerkrautlm-70b-instruct
 
 ### Quick Commands
 ```

@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [master]
+    branches: [main, master]
   pull_request:
-    branches: [master]
+    branches: [main, master]
 
 jobs:
   test:
@@ -12,7 +12,7 @@ jobs:
     runs-on: [self-hosted, ci-host]
     strategy:
       matrix:
-        node-version: ["20.x", "22.x"]
+        node-version: ["20.x", "22.x", "24.x"]
 
     steps:
       - name: Checkout repository
@@ -41,13 +41,30 @@ jobs:
       - name: TypeScript compilation check
         run: npm run tsc
 
+      - name: Install pi CLI
+        # test/integration/wire.test.mjs runs the real `pi` against a local mock;
+        # without it those tests skip rather than fail. No network to SAIA is
+        # involved — the mock speaks the OpenAI protocol.
+        run: npm install -g @earendil-works/pi-coding-agent
+
+      - name: Unit + hermetic wire tests (Node test runner)
+        run: npm test
+
+      - name: Smoke tests (structure, package manifest, skill frontmatter)
+        run: bash test/test.sh
+
       - name: Shell script syntax check
         run: |
-          for script in src/*.sh install.sh prepare-release.sh; do
+          for script in src/*.sh scripts/*.sh test/test.sh install.sh prepare-release.sh; do
             if [ -f "$script" ]; then
               bash -n "$script" || exit 1
               echo "✓ $script syntax OK"
             fi
+          done
+          for script in test/*.mjs test/unit/*.mjs test/integration/*.mjs test/lib/*.mjs; do
+            [ -f "$script" ] || continue
+            node --check "$script" || exit 1
+            echo "✓ $script syntax OK"
           done
 
       - name: Validate JSON schema

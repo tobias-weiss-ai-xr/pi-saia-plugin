@@ -1,11 +1,40 @@
 #!/bin/bash
-set -e
+#
+# Release preparation for pi-saia-plugin.
+#
+# Validates what is actually published — the pi package (extensions/ +
+# skills/), not the frozen legacy src/ tree — and then runs the full verify
+# suite. Safe to run with no API key and no pi installed.
+#
+#   ./prepare-release.sh
+#
+# Exit code 0 means the working tree is ready to tag.
 
-# Prepare release script for pi-saia-plugin
-# Validates, generates, and packages the plugin for release
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# `--no-tests` skips the verify suite. The smoke suite invokes this script, so
+# without an opt-out `npm run verify` would recurse forever:
+#   verify -> test:smoke -> prepare-release.sh -> verify -> ...
+RUN_TESTS=1
+for arg in "$@"; do
+    case "$arg" in
+        --no-tests) RUN_TESTS=0 ;;
+        -h|--help)
+            sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \?//'
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg (try --help)" >&2
+            exit 2
+            ;;
+    esac
+done
 
 VERSION=$(node -p "require('./package.json').version")
 GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+FAILURES=0
 
 print_header() {
     echo ""
@@ -15,234 +44,283 @@ print_header() {
     echo ""
 }
 
-print_step() {
-    echo "  → $1"
-}
+print_step() { echo "  → $1"; }
+print_success() { echo "  ✓ $1"; }
+print_warning() { echo "  ⚠ $1"; }
 
-print_success() {
-    echo "  ✓ $1"
-}
-
+# Record a failure but keep validating, so one run reports everything wrong.
 print_error() {
     echo "  ✗ $1"
-    exit 1
+    FAILURES=$((FAILURES + 1))
 }
 
-# Validate package.json
+require_files() {
+    local missing=0 file
+    for file in "$@"; do
+        if [ ! -e "$file" ]; then
+            print_error "missing: $file"
+            missing=1
+        fi
+    done
+    [ "$missing" -eq 0 ]
+}
+
+# ── package.json ─────────────────────────────────────────────────────────────
 validate_package() {
     print_step "Validating package.json..."
-    if [ ! -f "package.json" ]; then
+
+    if [ ! -f package.json ]; then
         print_error "package.json not found"
-    fi
-    
-    # Check required fields
-    if ! grep -q '"name": "pi-saia-plugin"' package.json; then
-        print_error "package.json missing name field"
-    fi
-    
-    if ! grep -q '"version"' package.json; then
-        print_error "package.json missing version field"
-    fi
-    
-    print_success "package.json is valid"
-}
-
-# Validate TypeScript files
-validate_typescript() {
-    print_step "Validating TypeScript files..."
-    
-    if [ ! -f "tsconfig.json" ]; then
-        print_error "tsconfig.json not found"
-    fi
-    
-    if [ ! -f "src/saia.ts" ]; then
-        print_error "src/saia.ts not found"
-    fi
-    
-    if [ ! -f "src/saia-memory.ts" ]; then
-        print_error "src/saia-memory.ts not found"
-    fi
-    
-    # Try to compile (no emit)
-    if command -v npx &> /dev/null; then
-        if npx tsc --noEmit --skipLibCheck 2>&1; then
-            print_success "TypeScript files are valid"
-        else
-            print_error "TypeScript compilation failed"
-        fi
-    else
-        print_success "TypeScript files exist (skipping compilation check)"
-    fi
-}
-
-# Validate shell scripts
-validate_scripts() {
-    print_step "Validating shell scripts..."
-    
-    local scripts=(
-        "src/generate-saia-config.sh"
-        "src/copy-saia-config.sh"
-        "src/validate-config.sh"
-        "src/setup-wizard.sh"
-        "install.sh"
-        "install.ps1"
-    )
-    
-    for script in "${scripts[@]}"; do
-        if [ ! -f "$script" ]; then
-            print_error "$script not found"
-        fi
-        if [ ${script: -3} == ".sh" ]; then
-            # Check for bash shebang
-            if ! head -1 "$script" | grep -q "#!/bin/bash\|#!/usr/bin/env bash"; then
-                print_error "$script missing bash shebang"
-            fi
-            # Check for execute permission
-            if [ ! -x "$script" ]; then
-                chmod +x "$script"
-            fi
-        fi
-    done
-    
-    print_success "Shell scripts are valid"
-}
-
-# Validate schema files
-validate_schemas() {
-    print_step "Validating schema files..."
-    
-    if [ ! -f "schema/pi.schema.json" ]; then
-        print_error "schema/pi.schema.json not found"
-    fi
-    
-    # Validate JSON
-    if command -v jq &> /dev/null; then
-        if ! jq empty schema/pi.schema.json 2>&1; then
-            print_error "schema/pi.schema.json is invalid JSON"
-        fi
-    fi
-    
-    print_success "Schema files are valid"
-}
-
-# Validate documentation
-validate_docs() {
-    print_step "Validating documentation..."
-    
-    local docs=(
-        "README.md"
-        "FAQ.md"
-        "ARCHITECTURE.md"
-        "LICENSE"
-    )
-    
-    for doc in "${docs[@]}"; do
-        if [ ! -f "$doc" ]; then
-            print_error "$doc not found"
-        fi
-    done
-    
-    print_success "Documentation files are present"
-}
-
-# Validate skills
-validate_skills() {
-    print_step "Validating skill files..."
-    
-    local skills_dir="src/.opencode/skills"
-    if [ ! -d "$skills_dir" ]; then
-        print_error "$skills_dir not found"
-    fi
-    
-    local expected_skills=(
-        "saia-refresh.md"
-        "saia-health.md"
-        "saia-list-models.md"
-        "saia-switch-profile.md"
-        "saia-optimize.md"
-    )
-    
-    for skill in "${expected_skills[@]}"; do
-        if [ ! -f "$skills_dir/$skill" ]; then
-            print_error "$skills_dir/$skill not found"
-        fi
-    done
-    
-    print_success "Skill files are present"
-}
-
-# Test generation
-validate_generation() {
-    print_step "Testing configuration generation..."
-    
-    if [ -z "${SAIA_API_KEY:-}" ]; then
-        print_step "  (skipping - SAIA_API_KEY not set)"
         return
     fi
-    
-    # Test with a temporary directory
-    local tmp_dir=$(mktemp -d)
-    pushd "$tmp_dir" > /dev/null 2>&1
-    
-    if bash "$(dirname "$0")/../src/generate-saia-config.sh" 2>&1; then
-        if [ -f "pi-saia.json" ]; then
-            local model_count=$(jq -r '.provider.saia.models | length' pi-saia.json 2>/dev/null || echo "0")
-            if [ "$model_count" -gt 0 ]; then
-                print_success "Generation successful ($model_count models)"
-            else
-                print_error "No models generated"
-            fi
-        else
-            print_error "pi-saia.json not created"
-        fi
-    else
-        print_error "Generation failed"
-    fi
-    
-    popd > /dev/null 2>&1
-    rm -rf "$tmp_dir"
+
+    node -e '
+        const pkg = require("./package.json");
+        const fail = [];
+        if (pkg.name !== "pi-saia-plugin") fail.push(`name is ${JSON.stringify(pkg.name)}`);
+        if (!/^\d+\.\d+\.\d+$/.test(pkg.version)) fail.push(`version is not semver: ${pkg.version}`);
+        if (pkg.main !== "extensions/index.ts") fail.push(`main is ${JSON.stringify(pkg.main)}`);
+        if (!pkg.pi?.extensions?.length) fail.push("pi.extensions is missing or empty");
+        if (!pkg.pi?.skills?.length) fail.push("pi.skills is missing or empty");
+        if (!pkg.files?.includes("extensions")) fail.push("files[] does not include extensions/");
+        if (!pkg.files?.includes("skills")) fail.push("files[] does not include skills/");
+        if (!pkg.scripts?.verify) fail.push("scripts.verify is missing");
+        if (!pkg.engines?.node) fail.push("engines.node is missing");
+        if (fail.length) { console.error(fail.join("\n")); process.exit(1); }
+    ' || print_error "package.json failed validation (see above)"
+
+    [ "$FAILURES" -eq 0 ] && print_success "package.json is valid"
 }
 
-# Cleanup
+# ── the pi package (what users actually get) ─────────────────────────────────
+validate_package_contents() {
+    print_step "Validating the pi package contents..."
+
+    require_files \
+        extensions/index.ts \
+        data/saia-models.json \
+        scripts/collect-saia-model-info.mjs \
+        scripts/reasoning-models.json \
+        skills/saia-models.md \
+        scripts/sync-saia-models.sh \
+        README.md \
+        CHANGELOG.md \
+        LICENSE
+
+    # The skill must declare its own name, otherwise pi registers it under the
+    # directory name ("skills") and it collides with other packages.
+    if [ -f skills/saia-models.md ]; then
+        if awk 'NR==1 && $0=="---"{next} /^---$/{exit} /^name:[[:space:]]*saia-models[[:space:]]*$/{found=1} END{exit !found}' \
+            skills/saia-models.md; then
+            print_success "skills/saia-models.md declares name: saia-models"
+        else
+            print_error "skills/saia-models.md is missing 'name: saia-models' frontmatter"
+        fi
+    fi
+
+    # extensions/index.ts is generated by scripts/sync-saia-models.sh from
+    # data/saia-models.json — it must keep the exports and wire fixes the
+    # generator emits, or a release would ship a plugin whose aliases 404.
+    if [ -f extensions/index.ts ]; then
+        grep -q "^export const SAIA_MODELS" extensions/index.ts \
+            || print_error "extensions/index.ts does not export SAIA_MODELS"
+        grep -q "^export const SAIA_ALIASES" extensions/index.ts \
+            || print_error "extensions/index.ts does not export SAIA_ALIASES"
+        grep -q "supportsDeveloperRole: false" extensions/index.ts \
+            || print_error "extensions/index.ts lost compat.supportsDeveloperRole = false (SAIA 400s on \`developer\`)"
+        grep -q "before_provider_request" extensions/index.ts \
+            || print_error "extensions/index.ts lost the alias rewrite hook (aliases would 404)"
+        grep -q "AUTO-GENERATED" extensions/index.ts \
+            || print_error "extensions/index.ts is missing its AUTO-GENERATED banner"
+    fi
+
+    # The facts file must parse and describe every model the generator emits.
+    if [ -f data/saia-models.json ]; then
+        if node -e 'const d=require("./data/saia-models.json"); if(!Array.isArray(d.models)||!d.models.length) process.exit(1)' 2>/dev/null; then
+            print_success "data/saia-models.json parses and lists models"
+        else
+            print_error "data/saia-models.json is not a valid model catalog"
+        fi
+    fi
+}
+
+# ── what npm would publish ───────────────────────────────────────────────────
+validate_pack() {
+    print_step "Checking the npm tarball contents..."
+
+    if ! command -v npm >/dev/null 2>&1; then
+        print_warning "npm not available — skipping tarball check"
+        return
+    fi
+
+    local listing
+    listing=$(npm pack --dry-run --json 2>/dev/null | node -e '
+        let raw = "";
+        process.stdin.on("data", (c) => (raw += c));
+        process.stdin.on("end", () => {
+            try {
+                const files = JSON.parse(raw)[0].files.map((f) => f.path);
+                process.stdout.write(files.join("\n"));
+            } catch { process.exit(1); }
+        });
+    ') || { print_warning "could not read npm pack output — skipping"; return; }
+
+    local required="extensions/index.ts data/saia-models.json skills/saia-models.md scripts/sync-saia-models.sh"
+    local f
+    for f in $required; do
+        if ! printf '%s\n' "$listing" | grep -qx "$f"; then
+            print_error "npm tarball would not include $f"
+        fi
+    done
+
+    if printf '%s\n' "$listing" | grep -q '^src/'; then
+        print_error "npm tarball would include the dead legacy src/ tree"
+    fi
+
+    local count
+    count=$(printf '%s\n' "$listing" | grep -c . || true)
+    print_success "npm tarball contains $count files"
+}
+
+# ── TypeScript ───────────────────────────────────────────────────────────────
+validate_typescript() {
+    print_step "Type-checking the extension..."
+
+    if [ ! -f tsconfig.json ]; then
+        print_error "tsconfig.json not found"
+        return
+    fi
+
+    if [ ! -d node_modules ]; then
+        print_warning "node_modules is missing — run 'npm ci' (skipping type check)"
+        return
+    fi
+
+    # Use the local binary only — `npx` would download TypeScript from the
+    # network when nothing is installed, and a node_modules built for another
+    # platform (mounted into a container) cannot run its native compiler.
+    local tsc_bin=""
+    if [ -x node_modules/.bin/tsc ]; then
+        tsc_bin="node_modules/.bin/tsc"
+    elif [ -f node_modules/typescript/bin/tsc ]; then
+        tsc_bin="node_modules/typescript/bin/tsc"
+    fi
+
+    if [ -z "$tsc_bin" ]; then
+        print_warning "no local typescript — skipping the type check"
+        return
+    fi
+
+    if ! "$tsc_bin" --version >/dev/null 2>&1; then
+        print_warning "local typescript is unusable on this platform — skipping the type check"
+        return
+    fi
+
+    if "$tsc_bin" --noEmit 2>&1; then
+        print_success "TypeScript is valid"
+    else
+        print_error "TypeScript compilation failed"
+    fi
+}
+
+# ── tests ────────────────────────────────────────────────────────────────────
+validate_tests() {
+    print_step "Running the verify suite (tsc + unit/wire tests + smoke)..."
+
+    if [ "$RUN_TESTS" -eq 0 ]; then
+        print_step "  (skipped — --no-tests)"
+        return
+    fi
+
+    if [ ! -d node_modules ]; then
+        print_warning "node_modules is missing — skipping the test suite"
+        return
+    fi
+
+    if npm run --silent verify >/tmp/pi-saia-verify.$$ 2>&1; then
+        print_success "verify suite passed"
+    else
+        print_error "verify suite failed (see /tmp/pi-saia-verify.$$)"
+        tail -20 /tmp/pi-saia-verify.$$ | sed 's/^/      /'
+    fi
+    rm -f /tmp/pi-saia-verify.$$
+}
+
+# ── optional live catalog check ──────────────────────────────────────────────
+validate_catalog_freshness() {
+    if [ -z "${SAIA_API_KEY:-}" ]; then
+        print_warning "SAIA_API_KEY not set — skipping the live catalog drift check"
+        return
+    fi
+
+    print_step "Checking the catalog against the live SAIA API..."
+    if ./scripts/sync-saia-models.sh --check; then
+        print_success "catalog matches the live API"
+    else
+        print_error "catalog is stale — run ./scripts/sync-saia-models.sh"
+    fi
+}
+
+# ── legacy (frozen) layer, only when explicitly requested ────────────────────
+validate_legacy() {
+    if [ "${SAIA_LEGACY:-0}" != "1" ]; then
+        print_step "Skipping the frozen legacy src/ checks (set SAIA_LEGACY=1 to include them)"
+        return
+    fi
+
+    print_step "Validating the frozen legacy layer..."
+    require_files \
+        src/generate-saia-config.sh \
+        src/copy-saia-config.sh \
+        src/validate-config.sh \
+        src/setup-wizard.sh \
+        schema/pi.schema.json
+    print_success "legacy files are present (they are not part of the release)"
+}
+
+# ── housekeeping ─────────────────────────────────────────────────────────────
 cleanup() {
-    print_step "Cleaning up old files..."
-    
-    # Remove old generated files
+    print_step "Cleaning up legacy generated files..."
     rm -f src/pi-saia.json src/pi-saia-*.json
-    
     print_success "Cleanup complete"
 }
 
-# Main
 main() {
     print_header
-    
-    print_step "Starting release preparation..."
-    echo ""
-    
+
     validate_package
+    validate_package_contents
+    validate_pack
     validate_typescript
-    validate_scripts
-    validate_schemas
-    validate_docs
-    validate_skills
-    validate_generation
+    validate_tests
+    validate_catalog_freshness
+    validate_legacy
     cleanup
-    
     echo ""
+    if [ "$FAILURES" -gt 0 ]; then
+        echo "=========================================="
+        echo "  Release Preparation FAILED ($FAILURES problem(s))"
+        echo "=========================================="
+        echo ""
+        exit 1
+    fi
+
     echo "=========================================="
-    echo "  Release Preparation Complete!"
+    echo "  Release Preparation Complete"
     echo "=========================================="
     echo ""
     echo "Version: v$VERSION"
-    echo "Commit: $GIT_HASH"
+    echo "Commit:  $GIT_HASH"
+    echo ""
+    echo "Options: --no-tests skips the verify suite (used by test/test.sh, and"
+    echo "         useful when 'npm run verify' is already running)."
     echo ""
     echo "Next steps:"
-    echo "  1. Review changes: git diff"
-    echo "  2. Commit changes: git commit -m 'Prepare v$VERSION'"
-    echo "  3. Create tag: git tag v$VERSION"
-    echo "  4. Push to remote: git push && git push --tags"
+    echo "  1. Review changes:  git diff"
+    echo "  2. Commit:          git commit -m 'Release v$VERSION'"
+    echo "  3. Tag and push:    git tag v$VERSION && git push --follow-tags"
+    echo "     (the tag triggers .github/workflows/release.yml)"
     echo ""
 }
 
-main
+main "$@"

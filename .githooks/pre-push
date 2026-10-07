@@ -32,10 +32,16 @@ else
     IN_CI=false
 fi
 
-MAIN_BRANCH="main"
+# Both names are accepted: this repository has been through a default-branch
+# rename, and CI itself triggers on both.
+MAIN_BRANCHES="main master"
 CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "unknown")
+ON_MAIN_BRANCH=false
+for branch in $MAIN_BRANCHES; do
+    [ "$CURRENT_BRANCH" = "$branch" ] && ON_MAIN_BRANCH=true
+done
 
-# Only run full checks on main branch or if explicitly requested
+# Only run full checks on the default branch or if explicitly requested
 echo_info "Current branch: $CURRENT_BRANCH"
 
 # TypeScript check
@@ -68,12 +74,14 @@ if [ $ERRORS -gt 0 ]; then
     exit 1
 fi
 
-# JSON validation
+# JSON validation.
+# Uses node, not jq: jq is not installed by default on macOS, and a missing
+# validator used to be reported as *invalid JSON*, which blocked every push.
 echo_info "Validating JSON files..."
 ERRORS=0
 for json in package.json tsconfig.json schema/*.json pi.json.example; do
     if [ -f "$json" ]; then
-        if jq empty "$json" >/dev/null 2>&1; then
+        if node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$json" >/dev/null 2>&1; then
             echo_success "JSON valid: $json"
         else
             echo_error "JSON invalid: $json"
@@ -88,7 +96,7 @@ if [ $ERRORS -gt 0 ]; then
 fi
 
 # Docker build check (only on main branch and if Docker available)
-if $DOCKER_AVAILABLE && [[ "$CURRENT_BRANCH" == "$MAIN_BRANCH" || "$IN_CI" == true ]]; then
+if $DOCKER_AVAILABLE && { $ON_MAIN_BRANCH || [ "$IN_CI" = true ]; }; then
     echo_info "Building Docker image for verification..."
     
     # Only fail on build errors, not on cache issues
@@ -103,7 +111,7 @@ if $DOCKER_AVAILABLE && [[ "$CURRENT_BRANCH" == "$MAIN_BRANCH" || "$IN_CI" == tr
 fi
 
 # Run test suite on main branch
-if [[ "$CURRENT_BRANCH" == "$MAIN_BRANCH" ]]; then
+if $ON_MAIN_BRANCH; then
     echo_info "Running test suite..."
     if [ -f "test/test.sh" ]; then
         if bash test/test.sh 2>&1; then

@@ -28,6 +28,7 @@ import {
   includeInProfile,
   supportsAttachment,
 } from "../../src/saia.ts"
+import { SAIA_ALIASES } from "../../extensions/index.ts"
 
 const REAL_MODEL_IDS = [
   "apertus-70b-instruct-2509",
@@ -130,14 +131,19 @@ test("US7: profile default model and inclusion filter behave predictably", () =>
   assert.ok(!budgetIncluded.includes("qwen3.8-2.4t-a95b"))
 })
 
-test("US8: every alias resolves to a real model id", () => {
+test("US8: the legacy alias map is the one the extension ships", () => {
   const known = new Set(REAL_MODEL_IDS)
   for (const [alias, target] of Object.entries(ALIASES)) {
     assert.ok(typeof alias === "string" && alias.length > 0, "alias key must be non-empty")
     assert.ok(known.has(target), `alias ${alias} -> unknown model ${target}`)
   }
+  // Two hand-maintained copies of the alias table drifted apart on three of
+  // eight aliases (best-for-agentic, best-for-vision, budget) and the legacy one
+  // was missing fastest-reasoning entirely. src/saia.ts re-exports the shipped
+  // map now; this is the assertion that keeps it that way.
+  assert.deepEqual(ALIASES, SAIA_ALIASES, "legacy ALIASES drifted from extensions/index.ts")
   assert.equal(ALIASES["best-for-coding"], "qwen3-coder-next")
-  assert.equal(ALIASES["budget"], "meta-llama-3.1-8b-instruct")
+  assert.equal(ALIASES["budget"], "deepseek-v4-flash-0731")
 })
 
 test("token limit helpers return documented buckets (per data/saia-models.json)", () => {

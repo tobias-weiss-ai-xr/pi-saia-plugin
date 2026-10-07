@@ -382,10 +382,104 @@ const finalize = (code) => {
 
 ---
 
+## Silent-failure entry points (fixed — do not regress)
+
+Four separate bugs had the same shape: the file looked fine, so nothing
+reported a problem, but the thing it configures never ran. All four are fixed
+and each now has a guard that was verified by reintroducing the original bug.
+
+| Entry point | Symptom | Root cause | Guard |
+|---|---|---|---|
+| `Makefile` | every target: `missing separator` | `HELP_TEXT = \\` followed by bare lines is a parse error | `test_makefile` |
+| `.github/workflows/test.yml` | no CI on any push or PR | branch filter was `master`; the only branch is `main` | `test_workflow_triggers` |
+| `.github/workflows/release.yml` | no release on any tag | tag filter `v[0-9]+.[0-9]+.[0-9]+` is a *glob* (`+` is literal), so it matched nothing | `test_workflow_triggers` + `test/lib/glob-matcher.mjs` |
+| `prepare-release.sh` | validated the wrong tree; generation check always failed | checked `src/.opencode/skills` and used a relative path *after* `pushd` | `test_release_script` |
+| `.githooks/pre-push` | blocked every push | `jq` is absent on stock macOS, and a missing validator was read as invalid JSON | `test_portability` |
+
+Two habits worth keeping, because each of these survived several rounds of
+reading-based review:
+
+1. **Run the entry point, do not read it.** `make help` would have surfaced the
+   Makefile bug in one second; `yaml.safe_load` surfaces workflow parse errors;
+   `bash -n` does *not* cover Makefiles, globs or jq availability.
+2. **Prove the guard fails.** After adding a check, reintroduce the bug and
+   confirm the suite goes red. Doing that here immediately exposed one guard of
+   my own that reported a bad tag filter as *skipped* rather than *failed* — a
+   test that could never fail.
+
+---
+
+## Model modality metadata disagrees across sources
+
+**Status:** open — needs a real vision harness and a curated override.
+
+The collected facts take `input` modalities from the live API, which appears to
+under-report vision support. Observed on 2026-10-07:
+
+| Model | Live API `input` | GWDG docs / notes | Colour probe (raw API, 2 images) |
+|-------|------------------|-------------------|----------------------------------|
+| `gemma-4-31b-it` | text, image | — | named both colours correctly |
+| `glm-5.3-flash` | text, image, video | — | named both colours correctly |
+| `qwen3.5-397b-a17b` | text, image | — | inconclusive (reasoning text mentions both colours) |
+| `qwen3.8-27b` | **text** | "Vision, great overall performance" | named both colours correctly |
+| `mistral-medium-3.5-128b` | **text** | — | named both colours correctly |
+| `openai-gpt-oss-120b` | **text** | — | rate-limited / inconclusive |
+
+**Why it matters:** `extensions/index.ts` is generated from those facts, so
+`best-for-vision` (→ `qwen3.8-27b`) declares `input: ["text"]`. pi will not
+attach an image to a text-only model, so the alias cannot do the one thing its
+name promises — even though the backend appears to accept images.
+
+**Caveat:** the probe used two solid-colour PNGs and a keyword check, and
+reasoning models routinely name *both* colours while deliberating, so it is not
+yet trustworthy. A proper harness (a distinctive image + a strict one-word
+answer, several repetitions) is needed before changing data.
+
+**Fix direction:** add an `input` override to the curated layer the collector
+already merges (`scripts/reasoning-models.json`, or a sibling file), citing the
+GWDG docs row and the probe. Do **not** hand-edit `data/saia-models.json` or
+`extensions/index.ts` — both are generated, and `--check` will flag the edit.
+
+## Legacy `src/` surface (OpenCode format — not used by pi)
+
+`src/saia.ts`, `src/saia-memory.ts`, `src/*.sh`, `src/.opencode/skills/`,
+`schema/pi.schema.json` and `pi.json.example` target the retired
+`~/.config/pi/pi.json` + `provider.<id>.npm` config format
+(`@ai-sdk/openai-compatible`). **pi ≥ 0.84 does not read those paths** — it
+loads packages listed in `~/.pi/agent/settings.json` and registers providers
+from extensions.
+
+What that means in practice:
+
+- The plugin pi actually loads is `extensions/index.ts` + `extensions/catalog.ts`.
+- `install.sh`, `install.ps1` and `make install` now call `pi install`; they no
+  longer copy anything to `~/.config/pi`.
+- The Docker image installs pi and runs `pi install` too, so the container uses
+  the same path as a normal install.
+- `src/generate-saia-config.sh`, `src/setup-wizard.sh`, `src/copy-saia-config.sh`
+  and `src/validate-config.sh` refuse to run unless `SAIA_LEGACY=1` is set, and
+  print the supported alternative instead. Their model tables are frozen and
+  still name retired models.
+- `src/saia.ts` is still unit-tested and its capability/limit helpers derive
+  from `extensions/catalog.ts`, but its `PLUGIN_CONFIG` output and the
+  `.opencode` skills are inert.
+
+Recommended follow-up: delete the `src/` tree, `schema/`, `pi.json.example` and
+`install.ps1`, and simplify the Docker/sandbox path to `pi install` only. That
+removes ~1,300 lines of untested bash/TypeScript that can only drift. It also
+touches `Dockerfile`, `docker-compose.yml`, `sandbox/*`, `prepare-release.sh`,
+`Makefile`, `test/test.sh`, the CI workflow and several docs — hence a change of
+its own rather than a drive-by edit.
+
+---
+
 ## Change History
 
 | Date | Change | Author |
 |------|--------|--------|
+| 2026-10-06 | Silent-failure entry points fixed and guarded: unparseable Makefile, CI branch filter, release tag glob, `prepare-release.sh`, `jq`-dependent hook; guards proven by reintroducing each bug | Pi Coding Agent |
+| 2026-10-06 | Doc-drift + generator-reproducibility + read-only `--check` tests; container rebuilt to install pi; legacy layer fenced behind `SAIA_LEGACY=1` | Pi Coding Agent |
+| 2026-10-06 | Catalog rebuilt from the live API; aliases, thinking levels, `developer` role, sync script, smoke suite, skill name and installers fixed | Pi Coding Agent |
 | 2025-01-15 | Initial analysis of bash tool hanging issues | Pi Coding Agent |
 | 2025-01-15 | Documented race conditions and edge cases | Pi Coding Assistant |
 | 2025-01-15 | Added recommendations and debugging tips | Pi Coding Assistant |

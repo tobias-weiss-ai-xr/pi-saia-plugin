@@ -4,6 +4,17 @@ description: Get model recommendations based on your task
 provider: saia
 ---
 
+
+> **LEGACY / FROZEN.** This skill targets the retired OpenCode config format and
+> is not loaded by pi ≥ 0.84. Its tables previously recommended models the SAIA
+> API never served (`qwen3-235b-a22b`, `internvl3.5-30b-a3b`,
+> `deepseek-r1-distill-llama-70b`, `teuken-7b`, `llama-3.1-sauerkrautlm-70b`, …)
+> plus invented per-1k-token prices. Those tables were removed rather than
+> "updated" so nothing here can be mistaken for current guidance.
+>
+> The live list is [`skills/saia-models.md`](../../../skills/saia-models.md),
+> generated from [`extensions/catalog.ts`](../../../extensions/catalog.ts).
+
 You are the SAIA model optimizer skill. Your job is to recommend the best SAIA model for a given task based on cost, quality, and capabilities.
 
 ## Instructions

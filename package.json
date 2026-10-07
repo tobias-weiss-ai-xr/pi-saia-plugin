@@ -1,20 +1,47 @@
 {
   "name": "pi-saia-plugin",
   "version": "1.1.0",
-  "description": "Pi package for SAIA (Academic Cloud Hessen) models — GLM, Qwen, DevStral, GPT-OSS. Auto-registers provider, models, and usage skill.",
-  "keywords": ["pi-package", "saia", "academic-cloud", "llm", "provider"],
+  "description": "Pi package for SAIA (Academic Cloud Hessen) models \u2014 GLM, Qwen, DevStral, GPT-OSS. Auto-registers provider, models, and usage skill.",
+  "keywords": [
+    "pi-package",
+    "saia",
+    "academic-cloud",
+    "llm",
+    "provider"
+  ],
   "type": "module",
   "main": "extensions/index.ts",
+  "files": [
+    "extensions",
+    "data",
+    "skills",
+    "scripts/sync-saia-models.sh",
+    "scripts/collect-saia-model-info.mjs",
+    "scripts/reasoning-models.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
     "lint": "tsc --noEmit",
     "tsc": "tsc --noEmit",
-    "test": "node --import tsx --test test/unit/*.test.mjs",
+    "test": "node --import tsx --test test/unit/*.test.mjs test/integration/*.test.mjs",
     "test:smoke": "bash test/test.sh",
-    "sync-models": "./scripts/sync-saia-models.sh"
+    "sync-models": "./scripts/sync-saia-models.sh",
+    "test:unit": "node --import tsx --test test/unit/*.test.mjs",
+    "test:wire": "node --import tsx --test test/integration/*.test.mjs",
+    "verify": "npm run tsc && npm test && npm run test:smoke"
   },
   "pi": {
-    "extensions": ["./extensions"],
-    "skills": ["./skills"]
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  },
+  "engines": {
+    "node": ">=20.6"
   },
   "repository": {
     "type": "git",

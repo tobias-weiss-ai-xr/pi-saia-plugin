@@ -19,23 +19,29 @@ const RUN_INTEGRATION = process.env.SAIA_RUN_INTEGRATION === "1" && Boolean(proc
 const SAIA_CACHE_FILE = path.join(os.homedir(), ".cache", "saia", "models.json")
 const SAIA_MODELS_LIST_FILE = path.join(os.homedir(), ".cache", "saia", "pi-models-list.json")
 
-test("US9: recommends glm-4.7 when available and no preference is set", async () => {
+test("US9: recommends glm-5.3-flash when available and no preference is set", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "saia-rec-"))
   const cwd = process.cwd()
   try {
     process.chdir(dir) // no .pi/saia/context.json -> empty context
-    assert.equal(await getRecommendedModel(["glm-4.7", "qwen3-coder-next"]), "glm-4.7")
+    assert.equal(await getRecommendedModel(["glm-5.3-flash", "qwen3-coder-next"]), "glm-5.3-flash")
   } finally {
     process.chdir(cwd)
   }
 })
 
-test("US9: falls back to the first available model when glm-4.7 is absent", async () => {
+test("US9: falls back to the default model, else the first available", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "saia-rec-"))
   const cwd = process.cwd()
   try {
     process.chdir(dir)
-    assert.equal(await getRecommendedModel(["qwen3-coder-next", "glm-4.6"]), "qwen3-coder-next")
+    // The default model wins wherever it appears in the list.
+    assert.equal(
+      await getRecommendedModel(["gemma-4-31b-it", "deepseek-v4-flash-0731"]),
+      "deepseek-v4-flash-0731",
+    )
+    // Default absent -> first available model wins.
+    assert.equal(await getRecommendedModel(["qwen3-coder-next", "gemma-4-31b-it"]), "qwen3-coder-next")
   } finally {
     process.chdir(cwd)
   }

@@ -20,7 +20,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import registerSaiaProvider, { SAIA_MODELS } from "../../extensions/index.ts"
+import registerSaiaProvider, { SAIA_ALL_MODELS, SAIA_MODELS } from "../../extensions/index.ts"
 
 const facts = JSON.parse(readFileSync(new URL("../../data/saia-models.json", import.meta.url), "utf8"))
 const factById = new Map(facts.models.map((model) => [model.id, model]))
@@ -32,15 +32,17 @@ const catalogInput = (factModel) => {
 }
 
 const REAL_MODEL_IDS = facts.models.map((model) => model.id)
-const realModels = SAIA_MODELS.filter((model) => REAL_MODEL_IDS.includes(model.id))
-const aliasModels = SAIA_MODELS.filter((model) => !REAL_MODEL_IDS.includes(model.id))
+// SAIA_MODELS holds the real models; SAIA_ALL_MODELS adds the alias entries that
+// are actually registered with pi (see extensions/index.ts).
+const realModels = SAIA_MODELS
+const aliasModels = SAIA_ALL_MODELS.filter((model) => !REAL_MODEL_IDS.includes(model.id))
 const realById = new Map(realModels.map((model) => [model.id, model]))
 const aliasTarget = (alias) => alias.name.split("→").pop().trim()
 
 test("US1: registers every documented base model (no duplicates)", () => {
   assert.ok(facts.gaps.api_without_docs.length === 0, "collector gaps must be curated first")
   assert.equal(realModels.length, REAL_MODEL_IDS.length, "base model count drifted")
-  const ids = SAIA_MODELS.map((model) => model.id)
+  const ids = SAIA_ALL_MODELS.map((model) => model.id)
   assert.equal(new Set(ids).size, ids.length, "duplicate model ids in catalog")
   for (const id of REAL_MODEL_IDS) {
     assert.ok(realById.has(id), `missing base model: ${id}`)
@@ -81,7 +83,9 @@ test("US3: vision (image) models match the collected modalities", () => {
   for (const alias of aliasModels) {
     if (realById.get(aliasTarget(alias))?.input.includes("image")) expectedVision.add(alias.id)
   }
-  const actualVision = new Set(SAIA_MODELS.filter((model) => model.input.includes("image")).map((model) => model.id))
+  const actualVision = new Set(
+    SAIA_ALL_MODELS.filter((model) => model.input.includes("image")).map((model) => model.id),
+  )
   assert.deepEqual([...actualVision].sort(), [...expectedVision].sort(), "vision model set mismatch")
 })
 
@@ -119,11 +123,14 @@ test("US2: every alias resolves to a real model and inherits its capabilities", 
 })
 
 test("US4: registers the provider under id 'saia' with the OpenAI-compatible API", () => {
-  const captured = {}
+  const captured = { hooks: [] }
   registerSaiaProvider({
     registerProvider(id, config) {
       captured.id = id
       captured.config = config
+    },
+    on(event, handler) {
+      captured.hooks.push({ event, handler })
     },
   })
 
@@ -132,7 +139,31 @@ test("US4: registers the provider under id 'saia' with the OpenAI-compatible API
   assert.equal(captured.config.baseUrl, "https://chat-ai.academiccloud.de/v1")
   assert.equal(captured.config.apiKey, "$SAIA_API_KEY")
   assert.equal(captured.config.api, "openai-completions")
-  // The registered models must be the exact catalog object.
-  assert.strictEqual(captured.config.models, SAIA_MODELS)
-  assert.equal(captured.config.models.length, SAIA_MODELS.length)
+  // The registered models include the alias entries.
+  assert.strictEqual(captured.config.models, SAIA_ALL_MODELS)
+  assert.equal(captured.config.models.length, SAIA_ALL_MODELS.length)
+})
+
+test("US2: the provider rewrites alias ids on the wire", () => {
+  // Without this hook SAIA answers 404 for every alias, because pi forwards an
+  // unrecognised model id verbatim.
+  const captured = { hooks: [] }
+  registerSaiaProvider({
+    registerProvider() {},
+    on(event, handler) {
+      captured.hooks.push({ event, handler })
+    },
+  })
+
+  const hook = captured.hooks.find((entry) => entry.event === "before_provider_request")
+  assert.ok(hook, "the provider must register a before_provider_request hook")
+
+  const alias = "best-for-coding"
+  const target = aliasModels.find((model) => model.id === alias).name.split("→").pop().trim()
+  const rewritten = hook.handler({ payload: { model: alias } }, { model: { provider: "saia" } })
+  assert.equal(rewritten.model, target, "the alias must be substituted with its target")
+
+  // A real model id must pass through untouched — the same object, not a copy.
+  const untouched = { model: "qwen3-coder-next" }
+  assert.strictEqual(hook.handler({ payload: untouched }, { model: { provider: "saia" } }), untouched)
 })

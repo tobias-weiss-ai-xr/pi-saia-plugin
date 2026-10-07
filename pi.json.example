@@ -1,7 +1,10 @@
 {
+  "//": "LEGACY EXAMPLE \u2014 pi >= 0.84 does NOT read ~/.config/pi/pi.json. Install with ./install.sh (pi install). See KNOWN_ISSUES.md.",
   "$schema": "https://pi.code/config.json",
-  "plugin": ["saia"],
-  "model": "saia/glm-4.7",
+  "plugin": [
+    "saia"
+  ],
+  "model": "saia/glm-5.3-flash",
   "permission": {
     "bash": "allow",
     "edit": "allow",
@@ -32,21 +35,25 @@
         "apiKey": "{env:SAIA_API_KEY}"
       },
       "models": {
-        "glm-4.7": {
-          "name": "GLM-4.7 (128k ctx) — Agentic coding, strong tool use",
+        "glm-5.3-flash": {
+          "name": "GLM 5.3 Flash (1M ctx) \u2014 reasoning + vision",
           "options": {
             "enable-tools": true,
             "enable-auto-tool-choice": true,
             "tool-call-parser": "openai"
           },
           "limit": {
-            "context": 128000,
-            "output": 16384
+            "context": 1048576,
+            "output": 32768
           },
           "metadata": {
-            "cost_per_1k_tokens": 0.015,
+            "cost_per_1k_tokens": 0,
             "estimated_latency": "fast",
-            "recommended_for": ["agentic-coding", "tool-use", "architecture"]
+            "recommended_for": [
+              "reasoning",
+              "vision",
+              "agentic-coding"
+            ]
           }
         }
       }

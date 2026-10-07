@@ -1,4 +1,33 @@
 #!/usr/bin/env bash
+#
+# =============================================================================
+# LEGACY / FROZEN — NOT USED BY pi >= 0.84
+#
+# This script targets the retired OpenCode config layout
+# (~/.config/pi/pi.json + provider.<id>.npm = @ai-sdk/openai-compatible).
+# pi loads packages from ~/.pi/agent/settings.json instead and registers
+# providers from extensions, so nothing here is read by a modern pi.
+#
+# Supported entry point: ./install.sh  (which runs `pi install <path>`)
+# See KNOWN_ISSUES.md -> "Legacy src/ surface".
+#
+# The model tables below are FROZEN and still name models the SAIA API no
+# longer serves. Set SAIA_LEGACY=1 to run it anyway.
+# =============================================================================
+
+# Refuse to run unless the caller explicitly opts into the legacy path.
+if [ "${SAIA_LEGACY:-0}" != "1" ]; then
+    cat >&2 <<'LEGACY_EOF'
+
+ERROR: generate-saia-config.sh writes the retired OpenCode config format (~/.config/pi/pi.json),
+       which pi >= 0.84 does not read. Installing this way has no effect.
+
+       Use ./install.sh (or: pi install /path/to/pi-saia-plugin) instead.
+
+       To run the frozen legacy script anyway:  SAIA_LEGACY=1 generate-saia-config.sh
+LEGACY_EOF
+    exit 1
+fi
 set -euo pipefail
 
 # SAIA Configuration Manager for pi

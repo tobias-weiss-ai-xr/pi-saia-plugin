@@ -110,17 +110,27 @@ jobs:
 
       - name: Run smoke test
         run: |
-          docker run --rm test-image sh -c '
+          docker run --rm test-image bash -c '
+            set -e
             echo "=== Smoke Test ==="
             echo "1. user:              $(whoami)"
-            test -f /home/pluginuser/app/src/saia.ts && echo "2. src/saia.ts:           OK"
-            test -f /home/pluginuser/app/src/saia-memory.ts && echo "3. src/saia-memory.ts:     OK"
-            test -f /home/pluginuser/app/src/generate-saia-config.sh && echo "4. generate script:       OK"
-            test -f /home/pluginuser/app/schema/pi.schema.json && echo "5. schema:                OK"
-            test -f /home/pluginuser/.config/pi/plugins/saia/saia.ts && echo "6. plugin saia.ts:        OK"
-            test -f /home/pluginuser/.config/pi/plugins/saia/schema/pi.schema.json && echo "7. plugin schema:         OK"
-            test -d /home/pluginuser/.config/pi/plugins/saia/.opencode/skills && echo "8. plugin skills dir:     OK"
-            test -d /home/pluginuser/.cache/saia && echo "9. cache dir:              OK"
+            echo "2. pi version:        $(pi --version)"
+            test -f /home/pluginuser/app/data/saia-models.json && echo "3. data catalog:      OK"
+            test -f /home/pluginuser/app/extensions/index.ts && echo "4. index.ts:          OK"
+            test -f /home/pluginuser/app/skills/saia-models.md && echo "5. skill:             OK"
+            test -x /home/pluginuser/app/scripts/sync-saia-models.sh && echo "6. sync script:       OK"
+            # `pi install` records a path (here ../../app), not the package
+            # name, so assert the outcome instead: the provider is registered
+            # and serves its 22 entries. --list-models needs a credential, and
+            # a dummy one is enough because the plugin registers its models
+            # from the generated catalog, not from the network.
+            test "$(SAIA_API_KEY=mock-test-key pi --list-models 2>/dev/null | grep -c '^saia')" -eq 22 \
+              && echo "7. registered models: 22 OK"
+            for f in /home/pluginuser/app/scripts/*.sh /home/pluginuser/app/install.sh; do bash -n "$f"; done
+            echo "8. shell syntax:      OK"
+            /home/pluginuser/app/scripts/sync-saia-models.sh --check >/dev/null 2>&1 \
+              && echo "9. catalog --check:    OK" \
+              || echo "9. catalog --check:    skipped (no API key)"
           '
 
       - name: Run TypeScript check

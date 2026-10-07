@@ -1,12 +1,20 @@
-// pi SAIA Plugin (legacy — prefer extensions/index.ts for provider registration)
-// Drop this file into ~/.config/pi/plugins/saia.ts
-// and add "saia" to your pi config plugins array
+// pi SAIA Plugin (LEGACY / FROZEN — not loaded by pi >= 0.84)
+//
+// This module targets the retired OpenCode config layout
+// (~/.config/pi/pi.json + provider.<id>.npm = @ai-sdk/openai-compatible),
+// which a modern pi never reads. The supported provider registration lives in
+// ../extensions/index.ts.
+//
+// It is kept because its helpers are unit-tested, and every capability/limit
+// below is derived from the shared catalog (../extensions/index.ts) rather
+// than from a second, divergent copy of the model list. See KNOWN_ISSUES.md.
 
 import path from "node:path"
 import os from "node:os"
 import fs from "node:fs/promises"
 
 import * as memory from "./saia-memory.js"
+import { SAIA_ALIASES, SAIA_MODELS } from "../extensions/index.ts"
 
 // Configuration paths
 const CONFIG = path.join(os.homedir(), ".config", "pi", "pi.json")
@@ -177,15 +185,11 @@ export function getModelMetadata(modelId: string): Record<string, any> {
 // Aliases (updated to use current API models only)
 // ---------------------------------------------------------------------------
 
-export const ALIASES: Record<string, string> = {
-  "best-for-coding": "qwen3-coder-next",
-  "best-for-reasoning": "qwen3.5-397b-a17b",
-  "best-for-agentic": "devstral-2-123b-instruct-2512",
-  "best-quality": "qwen3.5-397b-a17b",
-  "fastest": "meta-llama-3.1-8b-instruct",
-  "budget": "meta-llama-3.1-8b-instruct",
-  "best-for-vision": "qwen3.6-35b-a3b",
-}
+// Re-exported from the generated provider so the two copies cannot drift. They
+// had already diverged on three of eight aliases (best-for-agentic,
+// best-for-vision, budget), which meant a user reading the legacy OpenCode
+// surface was told a different model than pi actually sends.
+export const ALIASES: Record<string, string> = SAIA_ALIASES
 
 // ---------------------------------------------------------------------------
 // Profile defaults (updated to use current API models only)

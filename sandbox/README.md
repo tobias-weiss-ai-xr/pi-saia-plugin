@@ -119,7 +119,7 @@ docker run -it --rm \
   -e SAIA_PROFILE="production" \
   -v $(pwd):/workspace \
   ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin:latest \
-  bash -c "cd /home/pluginuser/app && ./src/generate-saia-config.sh"
+  bash -c "cd /home/pluginuser/app && SAIA_LEGACY=1 ./src/generate-saia-config.sh"
 ```
 
 ### Example 2: Development Shell
@@ -149,7 +149,7 @@ docker run -it --rm \
   -e SAIA_API_KEY="your_api_key" \
   -v $(pwd)/pi-config:/home/pluginuser/.config/pi \
   ghcr.io/tobias-weiss-ai-xr/pi-saia-plugin:latest \
-  bash /home/pluginuser/app/src/setup-wizard.sh
+  bash -c "SAIA_LEGACY=1 /home/pluginuser/app/src/setup-wizard.sh"
 ```
 
 ## Sandbox Scripts
