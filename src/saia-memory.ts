@@ -244,9 +244,9 @@ export async function getRecommendedModel(availableModels: string[]): Promise<st
     return context.preferredModel as string
   }
 
-  // Fallback: pick glm-4.7 if available, else first model
-  if (availableModels.includes("glm-4.7")) {
-    return "glm-4.7"
+  // Fallback: pick the default model if available, else first model
+  if (availableModels.includes("deepseek-v4-flash-0731")) {
+    return "deepseek-v4-flash-0731"
   }
 
   return availableModels[0] || "unknown"

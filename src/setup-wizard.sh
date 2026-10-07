@@ -128,7 +128,7 @@ run_wizard() {
     # Step 2: Profile Selection
     print_header "Step 2/4: Profile Selection"
     echo ""
-    echo "  1) Production  — Highest quality (glm-4.7, qwen3.5-397b, deepseek-r1)"
+    echo "  1) Production  — Highest quality (deepseek-v4-flash-0731, qwen3.5-397b-a17b)"
     echo "  2) Development — Balanced (qwen3.5-35b, coder models, gemma-4)"
     echo "  3) Budget      — Cheapest/fastest (llama-3.1-8b, gemma-3)"
     echo ""

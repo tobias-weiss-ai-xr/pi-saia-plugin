@@ -51,22 +51,22 @@ const CATEGORY_GENERAL = "general"
 // ---------------------------------------------------------------------------
 
 export function categorizeModel(modelId: string): string {
+  // reasoning set mirrors data/saia-models.json (collector output)
   const REASONING = [
-    "qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3-30b-a3b-instruct-2507",
+    "deepseek-v4-flash-0731", "openai-gpt-oss-120b",
+    "qwen3.5-397b-a17b", "qwen3.6-35b-a3b", "qwen3.8-27b",
   ]
   const AGENTIC = [
-    "devstral-2-123b-instruct-2512", "mistral-medium-3.5-128b", "qwen3.6-35b-a3b",
+    "devstral-2-123b-instruct-2512", "mistral-medium-3.5-128b", "glm-5.3-flash",
   ]
   const CODER = ["qwen3-coder-next"]
   const LARGE_CONTEXT = ["openai-gpt-oss-120b"]
-  const MEDICAL = ["medgemma-27b-it"]
-  const VISION = ["qwen3-omni-30b-a3b-instruct"]
+  const VISION = ["gemma-4-31b-it", "qwen3-omni-30b-a3b-instruct"]
 
   if (REASONING.includes(modelId)) return CATEGORY_REASONING
   if (AGENTIC.includes(modelId)) return CATEGORY_AGENTIC
   if (CODER.includes(modelId)) return CATEGORY_CODER
   if (LARGE_CONTEXT.includes(modelId)) return CATEGORY_LARGE_CONTEXT
-  if (MEDICAL.includes(modelId)) return CATEGORY_MEDICAL
   if (VISION.includes(modelId)) return CATEGORY_VISION
   return CATEGORY_GENERAL
 }
@@ -76,13 +76,16 @@ export function categorizeModel(modelId: string): string {
 // ---------------------------------------------------------------------------
 
 export function canReason(modelId: string): boolean {
-  return ["qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3-30b-a3b-instruct-2507"].includes(modelId)
+  return [
+    "deepseek-v4-flash-0731", "glm-5.3-flash", "openai-gpt-oss-120b",
+    "qwen3.5-397b-a17b", "qwen3.6-35b-a3b", "qwen3.8-27b",
+  ].includes(modelId)
 }
 
 export function supportsAttachment(modelId: string): boolean {
   return [
-    "qwen3.5-397b-a17b", "qwen3.5-122b-a10b", "qwen3.6-35b-a3b",
-    "gemma-4-31b-it", "medgemma-27b-it", "qwen3-omni-30b-a3b-instruct",
+    "gemma-4-31b-it", "glm-5.3-flash", "qwen3.5-397b-a17b",
+    "qwen3.6-35b-a3b", "qwen3-omni-30b-a3b-instruct",
   ].includes(modelId)
 }
 
@@ -90,25 +93,38 @@ export function supportsAttachment(modelId: string): boolean {
 // Token limits (from live API / documentation)
 // ---------------------------------------------------------------------------
 
-export function getContextWindow(_modelId: string): number {
-  // All models except medical/vision are 128K
-  return 131_072
+// Context windows mirror data/saia-models.json (GWDG docs values);
+// 128k is the conservative default for models not yet synced.
+const CONTEXT_WINDOWS: Record<string, number> = {
+  "apertus-70b-instruct-2509": 65_000,
+  "deepseek-v4-flash-0731": 1_000_000,
+  "devstral-2-123b-instruct-2512": 256_000,
+  "gemma-4-31b-it": 256_000,
+  "glm-5.3-flash": 1_000_000,
+  "meta-llama-3.1-8b-instruct": 128_000,
+  "mistral-medium-3.5-128b": 256_000,
+  "openai-gpt-oss-120b": 128_000,
+  "qwen3-30b-a3b-instruct-2507": 256_000,
+  "qwen3-coder-next": 256_000,
+  "qwen3-omni-30b-a3b-instruct": 256_000,
+  "qwen3.5-397b-a17b": 256_000,
+  "qwen3.6-35b-a3b": 262_000,
+  "qwen3.8-27b": 262_000,
+}
+
+export function getContextWindow(modelId: string): number {
+  return CONTEXT_WINDOWS[modelId] ?? 128_000
 }
 
 export function getOutputWindow(modelId: string): number {
-  const LARGE = ["qwen3.5-397b-a17b", "qwen3.5-122b-a10b"]
+  const LARGE = ["deepseek-v4-flash-0731", "glm-5.3-flash", "qwen3.5-397b-a17b"]
   const MEDIUM = [
-    "qwen3-30b-a3b-instruct-2507", "devstral-2-123b-instruct-2512",
-    "qwen3.6-35b-a3b", "deepseek-v4-flash-0731", "qwen3.6-27b", "glm-4.7",
-    "qwen3-coder-next",
+    "apertus-70b-instruct-2509", "devstral-2-123b-instruct-2512",
+    "qwen3-30b-a3b-instruct-2507", "qwen3.6-35b-a3b", "qwen3.8-27b",
+    "qwen3-coder-next", "qwen3-omni-30b-a3b-instruct",
   ]
-  const STANDARD = ["gemma-4-31b-it", "openai-gpt-oss-120b", "apertus-70b-instruct-2509", "mistral-medium-3.5-128b"]
-  const SMALL = ["medgemma-27b-it", "qwen3-omni-30b-a3b-instruct", "meta-llama-3.1-8b-instruct"]
-
   if (LARGE.includes(modelId)) return 32_768
   if (MEDIUM.includes(modelId)) return 16_384
-  if (STANDARD.includes(modelId)) return 8_192
-  if (SMALL.includes(modelId)) return 4_096
   return 8_192
 }
 
@@ -119,21 +135,21 @@ export function getOutputWindow(modelId: string): number {
 export function getModelDescription(modelId: string): string {
   const descriptions: Record<string, string> = {
     "qwen3.5-397b-a17b": "Qwen3.5 397B MoE — Flagship reasoning, best quality",
-    "qwen3.5-122b-a10b": "Qwen3.5 122B MoE — Strong reasoning, fast",
+
     "qwen3-30b-a3b-instruct-2507": "Qwen3 30B Instruct — General reasoning",
     "devstral-2-123b-instruct-2512": "DevStral 2 123B — Mistral's agentic coder",
     "mistral-medium-3.5-128b": "Mistral Medium 3.5 128B — Strong generalist",
     "qwen3.6-35b-a3b": "Qwen3.6 35B MoE — Agentic coding with vision",
     "qwen3-coder-next": "Qwen3 Coder Next — Code-specialized",
     "openai-gpt-oss-120b": "GPT-OSS 120B — Large context model",
-    "medgemma-27b-it": "MedGemma 27B — Medical domain specialist",
+
     "qwen3-omni-30b-a3b-instruct": "Qwen3 Omni 30B — Multimodal (text+image+audio)",
     "deepseek-v4-flash-0731": "DeepSeek V4 Flash — Fast, lightweight",
-    "qwen3.6-27b": "Qwen3.6 27B — Efficient general purpose",
     "gemma-4-31b-it": "Gemma 4 31B — Google latest",
     "apertus-70b-instruct-2509": "Apertus 70B — Open-source instruct",
     "meta-llama-3.1-8b-instruct": "Llama 3.1 8B — Fast, lightweight",
-    "glm-4.7": "GLM 4.7 — Strong tool use, agentic coding",
+    "glm-5.3-flash": "GLM 5.3 Flash — Fast agentic flagship, vision",
+    "qwen3.8-27b": "Qwen3.8 27B — Efficient reasoning",
   }
   return descriptions[modelId] || modelId
 }
@@ -178,14 +194,14 @@ export const ALIASES: Record<string, string> = {
 export function getProfileDefaultModel(profile: string): string {
   switch (profile) {
     case "production":
-      return "glm-4.7"
+      return "deepseek-v4-flash-0731"
     case "development":
     case "dev":
-      return "qwen3.6-27b"
+      return "qwen3.6-35b-a3b"
     case "budget":
       return "meta-llama-3.1-8b-instruct"
     default:
-      return "glm-4.7"
+      return "deepseek-v4-flash-0731"
   }
 }
 
@@ -198,14 +214,14 @@ export function includeInProfile(modelId: string, profile: string): boolean {
     case "dev":
       // Smaller/faster subset
       return [
-        "qwen3.6-27b", "qwen3.6-35b-a3b", "qwen3-coder-next",
-        "glm-4.7", "deepseek-v4-flash-0731", "qwen3-30b-a3b-instruct-2507",
+        "qwen3.6-35b-a3b", "qwen3-coder-next", "glm-5.3-flash",
+        "deepseek-v4-flash-0731", "qwen3-30b-a3b-instruct-2507",
         "gemma-4-31b-it", "meta-llama-3.1-8b-instruct", "apertus-70b-instruct-2509",
       ].includes(modelId)
     case "budget":
       return [
         "meta-llama-3.1-8b-instruct", "deepseek-v4-flash-0731",
-        "qwen3.6-27b", "gemma-4-31b-it",
+        "gemma-4-31b-it",
       ].includes(modelId)
     default:
       return true

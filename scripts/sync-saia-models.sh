@@ -124,9 +124,6 @@ categorize() {
         *omni*|*vl-*|*vision*|internvl*)
             echo "vision"
             ;;
-        medgemma*)
-            echo "medical"
-            ;;
         devstral*|mistral-medium*|glm-5.3-flash)
             echo "agentic"
             ;;
@@ -171,7 +168,7 @@ import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-codin
 // Model catalog — Auto-synced from SAIA API
 // ---------------------------------------------------------------------------
 
-const SAIA_MODELS: ProviderModelConfig[] = [
+export const SAIA_MODELS: ProviderModelConfig[] = [
 EOF
 
 # Track last category for grouping
@@ -191,6 +188,10 @@ echo "$FINAL_MODELS" | while read -r model_id; do
         reasoning=$(fact_for "$model_id" '.reasoning.supported == true | tostring')
         input_types=$(echo "$MODELS_JSON" | jq -r --arg id "$model_id" 'first(.data[] | select(.id == $id) | .input // ["text"]) | map(select(. == "text" or . == "image")) | if length == 0 then ["text"] else . end | join(",")')
         max_tokens=$(max_tokens_for "$model_id")
+        # never advertise an output cap larger than the model's context
+        if [ "$context" != "null" ] && [ "$max_tokens" -gt "$context" ] 2>/dev/null; then
+            max_tokens="$context"
+        fi
         category=$(categorize "$model_id")
         
         # Add category comment if it's a new category
@@ -230,6 +231,9 @@ for alias in "${!ALIASES[@]}"; do
         reasoning=$(fact_for "$target" '.reasoning.supported == true | tostring')
         input_types=$(echo "$MODELS_JSON" | jq -r --arg id "$target" 'first(.data[] | select(.id == $id) | .input // ["text"]) | map(select(. == "text" or . == "image")) | if length == 0 then ["text"] else . end | join(",")')
         max_tokens=$(max_tokens_for "$target")
+        if [ "$context" != "null" ] && [ "$max_tokens" -gt "$context" ] 2>/dev/null; then
+            max_tokens="$context"
+        fi
         
         # Format input types as JSON array
         input_json=$(echo "$input_types" | sed 's/,/", "/g' | sed 's/^/["/' | sed 's/$/"]/')

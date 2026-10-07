@@ -50,7 +50,7 @@ You are the SAIA model lister skill. Your job is to display all available SAIA m
 
 ### Quick Commands
 ```
-/model saia/glm-4.7              # Switch to GLM-4.7
+/model saia/deepseek-v4-flash-0731   # Switch to DeepSeek V4 Flash (default)
 /model saia/best-for-coding      # Use best coder model
 /model saia/best-for-reasoning   # Use best reasoning model
 ```

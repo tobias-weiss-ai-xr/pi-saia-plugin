@@ -129,7 +129,7 @@ categorize() {
         *vl-*|*vision*|internvl*)           echo "vision" ;;
         medgemma*)                          echo "medical" ;;
         teuken*|sauerkraut*)                echo "research" ;;
-        glm-4.7|devstral*)                  echo "agentic" ;;
+        devstral*)                  echo "agentic" ;;
         *120b|*235b|*675b|mistral-large*)   echo "large-context" ;;
         *)                                  echo "general" ;;
     esac
@@ -160,7 +160,6 @@ get_estimated_latency_ms() {
         *35b-a3b*|*30b*)          echo "moderate" ;;
         qwen3.5-122b*)            echo "slow" ;;
         qwen3-coder*)             echo "fast" ;;
-        glm-4.7)                  echo "fast" ;;
         deepseek-r1*)             echo "slow" ;;
         *70b*)                    echo "slow" ;;
         *235b*|mistral-large*)   echo "slow" ;;
@@ -175,7 +174,7 @@ get_recommended_for() {
         *coder*)                 echo "agentic-coding,code-refactor,debug" ;;
         *vision*|*vl-*|internvl*)  echo "image-analysis,multimodal,diagrams" ;;
         *thinking*|*r1*|deepseek*) echo "complex-reasoning,math,planning" ;;
-        glm-4.7|devstral*)       echo "agentic-coding,tool-use,architecture" ;;
+        devstral*)       echo "agentic-coding,tool-use,architecture" ;;
         medical*)                echo "medical-qa,healthcare,biomedical" ;;
         teuken*|sauerkraut*)     echo "german-text,research,academic" ;;
         qwen3.5-397b*)           echo "complex-reasoning,high-quality-writing" ;;
@@ -212,7 +211,7 @@ include_in_profile() {
 include_in_profile_production() {
     local id="$1"
     case "$id" in
-        qwen3.5-397b-a17b|qwen3.5-122b-a10b|qwen3-235b-a22b|mistral-large-3-675b-instruct-2512|glm-4.7|devstral-2*)
+        qwen3.5-397b-a17b|qwen3-235b-a22b|mistral-large-3-675b-instruct-2512|devstral-2*)
             echo "true" ;;
         deepseek-r1*|*thinking*)
             echo "true" ;;
@@ -228,7 +227,7 @@ include_in_profile_development() {
     case "$id" in
         qwen3.5-35b-a3b|qwen3.5-27b|qwen3-32b|llama-3.3-70b-instruct|gemma-3-27b*|gemma-4-31b*)
             echo "true" ;;
-        qwen3-coder*|glm-4.7)
+        qwen3-coder*)
             echo "true" ;;
         *vl-*|*vision*|internvl*)
             echo "true" ;;
@@ -252,10 +251,10 @@ include_in_profile_budget() {
 get_profile_default_model() {
     local profile="$1"
     case "$profile" in
-        production)    echo "glm-4.7" ;;
+        production)    echo "deepseek-v4-flash-0731" ;;
         development|dev) echo "qwen3.5-35b-a3b" ;;
         budget)        echo "llama-3.1-8b-instruct" ;;
-        *)             echo "glm-4.7" ;;
+        *)             echo "deepseek-v4-flash-0731" ;;
     esac
 }
 
@@ -264,7 +263,6 @@ describe() {
     local cat="$2"
     case "$id" in
         qwen3.5-397b-a17b)       echo "Qwen3.5 397B MoE (128k ctx) — Flagship reasoning, best quality" ;;
-        qwen3.5-122b-a10b)       echo "Qwen3.5 122B MoE (128k ctx) — Strong reasoning, fast" ;;
         qwen3.5-35b-a3b)         echo "Qwen3.5 35B MoE (128k ctx) — Fast reasoning" ;;
         qwen3.5-27b)             echo "Qwen3.5 27B Dense (128k ctx) — Efficient reasoning" ;;
         qwen3.6-35b-a3b)         echo "Qwen3.6 35B MoE — Vision, reasoning, agentic coding" ;;
@@ -278,7 +276,6 @@ describe() {
         mistral-large-3-675b-instruct-2512) echo "Mistral Large 3 675B (128k ctx) — Largest model, strong generalist" ;;
         openai-gpt-oss-120b)     echo "OpenAI GPT-OSS 120B — Large context model" ;;
         devstral-2-123b-instruct-2512) echo "Devstral 2 123B — Mistral's agentic coder" ;;
-        glm-4.7)                 echo "GLM-4.7 (128k ctx) — Agentic coding, strong tool use" ;;
         deepseek-r1-distill-llama-70b) echo "DeepSeek R1 Distill 70B — Reasoning (Llama base)" ;;
         gemma-3-27b-it)          echo "Gemma 3 27B — Google lightweight model" ;;
         gemma-4-31b-it)          echo "Gemma 4 31B — Google latest" ;;
@@ -286,7 +283,6 @@ describe() {
         llama-3.1-8b-instruct)   echo "Llama 3.1 8B — Meta fast lightweight" ;;
         apertus-70b-instruct-2509) echo "Apertus 70B — Open-source instruct model" ;;
         internvl3.5-30b-a3b)     echo "InternVL 3.5 30B — Vision-language" ;;
-        medgemma-27b-it)         echo "MedGemma 27B — Medical domain specialist" ;;
         teuken-7b-instruct-research) echo "Teuken 7B — German research model" ;;
         llama-3.1-sauerkrautlm-70b-instruct) echo "SauerkrautLM 70B — German-enhanced Llama" ;;
         meta-llama-3.1-8b-instruct) echo "Llama 3.1 8B — Meta lightweight" ;;
@@ -297,7 +293,7 @@ describe() {
 can_reason() {
     local id="$1"
     case "$id" in
-        *thinking*|*r1*|deepseek-r1*|qwen3.5-397b-a17b|qwen3.5-122b-a10b|qwen3.5-35b-a3b|qwen3.5-27b|qwen3.6-35b-a3b|glm-4.7|qwen3-235b-a22b|qwen3-30b-a3b-instruct-2507)
+        *thinking*|*r1*|deepseek-r1*|qwen3.5-397b-a17b|qwen3.5-35b-a3b|qwen3.5-27b|qwen3.6-35b-a3b|qwen3-235b-a22b|qwen3-30b-a3b-instruct-2507)
             echo "true" ;;
         *)
             echo "false" ;;
@@ -307,11 +303,11 @@ can_reason() {
 get_context_window() {
     local id="$1"
     case "$id" in
-        qwen3.5-397b-a17b|qwen3.5-122b-a10b|qwen3.5-35b-a3b|qwen3.5-27b|qwen3.6-35b-a3b|qwen3-235b-a22b|qwen3-32b|mistral-large-3-675b-instruct-2512|glm-4.7|llama-3.3-70b-instruct|llama-3.1-8b-instruct|llama-3.1-sauerkrautlm-70b-instruct|meta-llama-3.1-8b-instruct|apertus-70b-instruct-2509|devstral-2-123b-instruct-2512|openai-gpt-oss-120b|deepseek-r1-distill-llama-70b)
+        qwen3.5-397b-a17b|qwen3.5-35b-a3b|qwen3.5-27b|qwen3.6-35b-a3b|qwen3-235b-a22b|qwen3-32b|mistral-large-3-675b-instruct-2512|llama-3.3-70b-instruct|llama-3.1-8b-instruct|llama-3.1-sauerkrautlm-70b-instruct|meta-llama-3.1-8b-instruct|apertus-70b-instruct-2509|devstral-2-123b-instruct-2512|openai-gpt-oss-120b|deepseek-r1-distill-llama-70b)
             echo "128000" ;;
         gemma-3-27b-it|gemma-4-31b-it|qwen3-coder-30b-a3b-instruct|qwen3-30b-a3b-instruct-2507|qwen3-30b-a3b-thinking-2507)
             echo "131072" ;;
-        qwen3-vl-30b-a3b-instruct|internvl3.5-30b-a3b|medgemma-27b-it|qwen3-omni-30b-a3b-instruct|teuken-7b-instruct-research)
+        qwen3-vl-30b-a3b-instruct|internvl3.5-30b-a3b|qwen3-omni-30b-a3b-instruct|teuken-7b-instruct-research)
             echo "32768" ;;
         *)
             echo "128000" ;;
@@ -331,15 +327,15 @@ supports_attachment() {
 get_output_window() {
     local id="$1"
     case "$id" in
-        qwen3.5-397b-a17b|qwen3.5-122b-a10b|qwen3.6-35b-a3b|mistral-large-3-675b-instruct-2512|qwen3-235b-a22b)
+        qwen3.5-397b-a17b|qwen3.6-35b-a3b|mistral-large-3-675b-instruct-2512|qwen3-235b-a22b)
             echo "32768" ;;
-        qwen3.5-35b-a3b|qwen3.5-27b|glm-4.7|devstral-2-123b-instruct-2512|qwen3-32b|qwen3-coder-30b-a3b-instruct|deepseek-r1-distill-llama-70b)
+        qwen3.5-35b-a3b|qwen3.5-27b|devstral-2-123b-instruct-2512|qwen3-32b|qwen3-coder-30b-a3b-instruct|deepseek-r1-distill-llama-70b)
             echo "16384" ;;
         qwen3-30b-a3b-instruct-2507|qwen3-30b-a3b-thinking-2507)
             echo "16384" ;;
         gemma-3-27b-it|gemma-4-31b-it|llama-3.3-70b-instruct|apertus-70b-instruct-2509|openai-gpt-oss-120b)
             echo "8192" ;;
-        internvl3.5-30b-a3b|qwen3-vl-30b-a3b-instruct|qwen3-omni-30b-a3b-instruct|medgemma-27b-it)
+        internvl3.5-30b-a3b|qwen3-vl-30b-a3b-instruct|qwen3-omni-30b-a3b-instruct)
             echo "4096" ;;
         teuken-7b-instruct-research|llama-3.1-sauerkrautlm-70b-instruct|llama-3.1-8b-instruct|meta-llama-3.1-8b-instruct)
             echo "4096" ;;
@@ -446,7 +442,7 @@ ALIASES=(
     "best-for-coding:qwen3-coder-30b-a3b-instruct"
     "best-for-reasoning:deepseek-r1-distill-llama-70b"
     "best-for-vision:internvl3.5-30b-a3b"
-    "best-for-agentic:glm-4.7"
+    "best-for-agentic:glm-5.3-flash"
     "best-quality:qwen3.5-397b-a17b"
     "fastest:llama-3.1-8b-instruct"
     "budget:llama-3.1-8b-instruct"

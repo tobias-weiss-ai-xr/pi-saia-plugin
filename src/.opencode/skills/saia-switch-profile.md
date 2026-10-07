@@ -10,7 +10,7 @@ You are the SAIA profile switcher skill. Your job is to help users switch betwee
 
 | Profile | Models | Use Case | Default |
 |---------|----------|----------|---------|
-| **production** | ~8-9 highest quality | Critical work, best quality | glm-4.7 |
+| **production** | all models | Critical work, best quality | deepseek-v4-flash-0731 |
 | **development** | ~7-8 balanced | Active development, faster | qwen3.5-35b |
 | **budget** | ~4 cheapest | Cost optimization | llama-3.1-8b |
 

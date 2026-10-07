@@ -47,9 +47,9 @@ fi
 | Quality | qwen3-coder-30b-a3b-instruct | Moderate | Best code专用模型 |
 | Speed | llama-3.1-8b-instruct | Low | Fast, cheap, good for quick edits |
 | Context | qwen3-235b-a22b | High | Huge 128k context for large files |
-| Tools | glm-4.7 | Moderate | Excellent agentic capabilities |
+| Tools | glm-5.3-flash | Moderate | Excellent agentic capabilities |
 
-**Recommendation**: `saia/best-for-coding` or `saia/glm-4.7`
+**Recommendation**: `saia/best-for-coding` or `saia/glm-5.3-flash`
 
 ### Complex Reasoning
 | Priority | Model | Reason |

@@ -49,7 +49,7 @@ Only output limits, categories and aliases remain opinionated (they live in
 
 ## Features
 
-- **Auto-registration** — `pi.registerProvider()` adds all 16 SAIA models on startup
+- **Auto-registration** — `pi.registerProvider()` adds all 14 SAIA models on startup
 - **Zero config** — API key from `auth.json`, `$SAIA_API_KEY` env var, or `/login saia`
 - **Skill included** — `/skill:saia-models` documents available models and usage
 - **OpenAI-compatible** — Uses standard `openai-completions` API
@@ -73,78 +73,42 @@ Then reload or restart pi:
 
 ## Available Models
 
-### 🆕 Latest: Qwen3.8 (August 2026)
+14 SAIA models, synced from the live API with context windows from the
+[GWDG docs](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html):
 
 | Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
 |----------|------|-----|-----|-----------|--------|----------|
-| `saia/qwen3.8-2.4t-a95b` | Qwen 3.8 2.4T A95B | 256K | 64K | ✅ | — | reasoning |
-| `saia/qwen3.8-27b` | Qwen 3.8 27B | 128K | 32K | — | 🖼 | general |
+| `saia/apertus-70b-instruct-2509` | Apertus 70B | 65K | 16K | — | — | general |
+| `saia/deepseek-v4-flash-0731` | DeepSeek V4 Flash | 1M | 32K | ✅ | — | reasoning |
+| `saia/devstral-2-123b-instruct-2512` | Devstral 2 123B | 256K | 16K | — | — | agentic |
+| `saia/gemma-4-31b-it` | Gemma 4 31B | 256K | 8K | — | 🖼 | vision |
+| `saia/glm-5.3-flash` | GLM 5.3 Flash | 1M | 32K | ✅ | 🖼 | agentic |
+| `saia/meta-llama-3.1-8b-instruct` | Llama 3.1 8B | 128K | 8K | — | — | general |
+| `saia/mistral-medium-3.5-128b` | Mistral Medium 3.5 128B | 256K | 8K | — | — | agentic |
+| `saia/openai-gpt-oss-120b` | GPT-OSS 120B | 128K | 8K | ✅ | — | reasoning |
+| `saia/qwen3-30b-a3b-instruct-2507` | Qwen3 30B A3B | 256K | 16K | — | — | reasoning |
+| `saia/qwen3-coder-next` | Qwen3 Coder Next | 256K | 16K | — | — | coder |
+| `saia/qwen3-omni-30b-a3b-instruct` | Qwen3 Omni 30B | 256K | 16K | — | 🖼 | vision |
+| `saia/qwen3.5-397b-a17b` | Qwen3.5 397B A17B | 256K | 32K | ✅ | 🖼 | reasoning |
+| `saia/qwen3.6-35b-a3b` | Qwen3.6 35B A3B | 262K | 16K | ✅ | 🖼 | reasoning |
+| `saia/qwen3.8-27b` | Qwen3.8 27B | 262K | 16K | ✅ | — | reasoning |
 
-### Reasoning Models
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/qwen3.5-397b-a17b` | Qwen 3.5 397B | 128K | 32K | ✅ | 🖼 | reasoning |
-| `saia/qwen3.5-122b-a10b` | Qwen 3.5 122B | 128K | 32K | ✅ | 🖼 | reasoning |
-| `saia/qwen3-30b-a3b-instruct-2507` | Qwen 3 30B | 128K | 16K | ✅ | — | reasoning |
-
-### Agentic Models
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/devstral-2-123b-instruct-2512` | DevStral 2 123B | 128K | 16K | — | — | agentic |
-| `saia/mistral-medium-3.5-128b` | Mistral Medium 3.5 128B | 128K | 8K | — | — | agentic |
-| `saia/qwen3.6-35b-a3b` | Qwen 3.6 35B | 128K | 16K | — | 🖼 | agentic |
-
-### Coder
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/qwen3-coder-next` | Qwen 3 Coder Next | 128K | 16K | — | — | coder |
-
-### Large Context
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/openai-gpt-oss-120b` | GPT-OSS 120B | 128K | 8K | — | — | large-context |
-
-### Medical
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/medgemma-27b-it` | MedGemma 27B | 32K | 4K | — | 🖼 | medical |
-
-### Vision
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Modalities |
-|----------|------|-----|-----|-----------|--------|------------|
-| `saia/qwen3-omni-30b-a3b-instruct` | Qwen 3 Omni 30B | 32K | 4K | — | 🖼 | text+🖼+🔊 |
-
-### General
-
-| Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
-|----------|------|-----|-----|-----------|--------|----------|
-| `saia/deepseek-v4-flash-0731` | DeepSeek V4 Flash | 128K | 16K | — | — | general |
-| `saia/qwen3.6-27b` | Qwen 3.6 27B | 128K | 16K | — | — | general |
-| `saia/glm-4.7` | GLM 4.7 | 128K | 16K | — | — | general |
-| `saia/gemma-4-31b-it` | Gemma 4 31B | 128K | 8K | — | 🖼 | general |
-| `saia/apertus-70b-instruct-2509` | Apertus 70B | 128K | 8K | — | — | general |
-| `saia/meta-llama-3.1-8b-instruct` | Llama 3.1 8B | 128K | 4K | — | — | general |
+Default model: `saia/deepseek-v4-flash-0731` — 1M context, reasoning-capable.
 
 ## Model Aliases
 
-Quick shortcuts for common use cases:
+| Alias | Points To |
+|---|---|
+| `saia/best-for-coding` | `qwen3-coder-next` |
+| `saia/best-for-reasoning` | `qwen3.5-397b-a17b` |
+| `saia/best-quality` | `qwen3.5-397b-a17b` |
+| `saia/best-for-vision` | `qwen3.8-27b` |
+| `saia/best-for-agentic` | `glm-5.3-flash` |
+| `saia/fastest` | `meta-llama-3.1-8b-instruct` |
+| `saia/fastest-reasoning` | `qwen3.8-27b` |
+| `saia/budget` | `deepseek-v4-flash-0731` |
 
-| Alias | Resolves To | Use Case |
-|-------|-------------|----------|
-| `saia/best-for-coding` | qwen3-coder-next | Code generation and refactoring |
-| `saia/best-for-reasoning` | qwen3.8-2.4t-a95b | Complex reasoning tasks |
-| `saia/best-quality` | qwen3.8-2.4t-a95b | Highest quality responses |
-| `saia/best-for-vision` | qwen3.8-27b | Image understanding |
-| `saia/best-for-agentic` | glm-4.7 | Tool use and agentic tasks |
-| `saia/fastest` | meta-llama-3.1-8b-instruct | Quick responses |
-| `saia/fastest-reasoning` | qwen3.8-27b | Fast reasoning with vision |
-| `saia/budget` | deepseek-v4-flash-0731 | Cost-effective tasks |
+Usage: `/model saia/best-for-coding` — aliases always point at live models.
 
 ## Usage
 
@@ -153,7 +117,7 @@ Quick shortcuts for common use cases:
 pi --list-models | grep ^saia
 
 # Switch to a model
-/model saia/glm-4.7
+/model saia/deepseek-v4-flash-0731
 
 # Use aliases for quick switching
 /model saia/best-quality
@@ -162,7 +126,7 @@ pi --list-models | grep ^saia
 
 # With thinking level (reasoning models only)
 /model saia/qwen3.5-397b-a17b:high
-/model saia/qwen3.8-2.4t-a95b:medium
+/model saia/qwen3.5-397b-a17b:medium
 
 # Load the skill for documentation
 /skill:saia-models

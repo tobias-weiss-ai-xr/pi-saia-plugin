@@ -79,7 +79,7 @@ cat > ~/.config/pi/pi.json <<'EOF'
 {
   "$schema": "https://pi.code/config.json",
   "plugin": ["saia"],
-  "model": "saia/glm-4.7"
+  "model": "saia/deepseek-v4-flash-0731"
 }
 EOF
 
@@ -95,7 +95,7 @@ bash ~/.config/pi/plugins/saia/generate-saia-config.sh
 Use pi's model switching command:
 
 ```
-/model saia/glm-4.7           # Use GLM-4.7
+/model saia/deepseek-v4-flash-0731  # Use DeepSeek V4 Flash
 /model saia/qwen3.5-35b-a3b   # Use Qwen3.5 35B
 /model saia/best-for-coding   # Use coding alias
 ```
@@ -106,14 +106,13 @@ Aliases provide shortcuts to models optimized for specific tasks:
 
 | Alias | Points To | Use Case |
 |-------|-----------|----------|
-| `best-for-coding` | qwen3-coder-30b | Code-specialized |
-| `best-for-reasoning` | deepseek-r1-distill-llama-70b | Complex reasoning |
-| `best-for-vision` | internvl3.5-30b-a3b | Image analysis |
-| `best-for-agentic` | glm-4.7 | Agentic coding |
+| `best-for-coding` | qwen3-coder-next | Code-specialized |
+| `best-for-reasoning` | qwen3.5-397b-a17b | Complex reasoning |
+| `best-for-vision` | qwen3.8-27b | Image analysis |
+| `best-for-agentic` | glm-5.3-flash | Agentic coding |
 | `best-quality` | qwen3.5-397b-a17b | Highest quality |
-| `fastest` | llama-3.1-8b | Fastest response |
-| `budget` | llama-3.1-8b | Lowest cost |
-| `best-german` | llama-3.1-sauerkrautlm-70b | German tasks |
+| `fastest` | meta-llama-3.1-8b-instruct | Fastest response |
+| `budget` | deepseek-v4-flash-0731 | Lowest cost |
 
 ### How do I see all available models?
 
@@ -209,33 +208,31 @@ Or refer to this quick guide:
 
 | Task | Best Model | Alternative |
 |------|------------|-------------|
-| Coding | qwen3-coder-30b or glm-4.7 | devstral-2-123b |
-| Reasoning | qwen3.5-397b-a17b | deepseek-r1-distill-llama-70b |
-| Vision | internvl3.5-30b-a3b | qwen3-vl-30b |
-| German | llama-3.1-sauerkrautlm-70b | teuken-7b |
-| Quick tasks | llama-3.1-8b | gemma-3-27b |
-| Large context | qwen3-235b-a22b | mistral-large-3-675b |
+| Coding | qwen3-coder-next | devstral-2-123b-instruct-2512 |
+| Reasoning | qwen3.5-397b-a17b | qwen3.8-27b |
+| Vision | qwen3.8-27b | gemma-4-31b-it |
+| German | meta-llama-3.1-8b-instruct | gemma-4-31b-it |
+| Quick tasks | meta-llama-3.1-8b-instruct | gemma-4-31b-it |
+| Large context | glm-5.3-flash | deepseek-v4-flash-0731 |
 
 ### What models support reasoning?
 
-Models with `can_reason: true`:
+Models with reasoning enabled (from `data/saia-models.json`):
 
+- deepseek-v4-flash-0731
+- glm-5.3-flash
+- openai-gpt-oss-120b
 - qwen3.5-397b-a17b
-- qwen3.5-122b-a10b
-- qwen3.5-35b-a3b
-- qwen3.5-27b
 - qwen3.6-35b-a3b
-- glm-4.7
-- qwen3-235b-a22b
-- qwen3-30b-a3b-thinking-2507
-- deepseek-r1-distill-llama-70b
+- qwen3.8-27b
 
 ### What models support image input?
 
-Models with `attachment: true` (vision models):
+Models with image input (from `data/saia-models.json`):
 
-- qwen3-vl-30b-a3b-instruct
-- internvl3.5-30b-a3b
+- gemma-4-31b-it
+- glm-5.3-flash
+- qwen3.5-397b-a17b
 - qwen3.6-35b-a3b
 - qwen3-omni-30b-a3b-instruct
 
@@ -256,11 +253,13 @@ Rate limits are set by GWDG/SAIA. Contact their support if you need higher limit
 
 ### What context window do models have?
 
-Most models support 128,000 tokens (128k). Some have different limits:
+Context windows come from the [GWDG docs table](https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html)
+and are synced into `data/saia-models.json`:
 
-- **128k**: Most models (qwen3.5-*, mistral-large-3, glm-4.7, llama-3.*)
-- **131k**: gemma-3-27b, gemma-4-31b, qwen3-coder, qwen3-30b-*
-- **32k**: Vision models (qwen3-vl, internvl, qwen3-omni, medgemma, teuken)
+- **1M**: glm-5.3-flash, deepseek-v4-flash-0731
+- **256K–262K**: devstral-2, gemma-4-31b, mistral-medium-3.5, qwen3.5-397b, qwen3.6-35b, qwen3.8-27b, qwen3-30b, qwen3-coder-next, qwen3-omni-30b
+- **128K**: meta-llama-3.1-8b, openai-gpt-oss-120b
+- **65K**: apertus-70b-instruct-2509
 
 ## LiteLLM Proxy
 

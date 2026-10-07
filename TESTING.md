@@ -26,6 +26,9 @@ The unit suite lives in `test/unit/`:
 | `test/unit/memory.test.mjs` | SAIA-MEMORY | US9, US10 |
 | `test/unit/facts-collector.test.mjs` | SAIA-FACTS | US11, US12, US13, US14, US15 |
 | `test/unit/facts-invariants.test.mjs` | SAIA-FACTS | US16, US17, US18 |
+| `test/unit/hygiene.test.mjs` | SAIA-HYGIENE | US19, US20, US21 |
+| `test/unit/docs.test.mjs` | SAIA-DOCS | US22, US23, US24 |
+| `test/unit/contract.test.mjs` | SAIA-CONTRACT | US25, US26 |
 
 ---
 
@@ -214,3 +217,63 @@ The unit suite lives in `test/unit/`:
 - **Then** it carries a `toggle` or `effort` param so clients know what to send.
 - **Test:** `facts-invariants.test.mjs` → "supported models name their vendor
   API surface".
+
+---
+
+## Epic SAIA-HYGIENE — retired models and hand-curated tables stay dead
+
+> As a user I want no shipped surface (runtime code, skills, docs) to
+> recommend a model that 500s because SAIA retired it, and no metadata to
+> sneak back in as literals.
+
+### US19 — No shipped surface mentions a retired model
+- **Given** the retired set (glm-4.7, qwen3.8-2.4t-a95b, qwen3.5-122b-a10b,
+  qwen3.6-27b, medgemma-27b-it)
+- **Then** none of extensions/index.ts, src/saia.ts, src/saia-memory.ts,
+  generate-saia-config.sh, setup-wizard.sh, skills/saia-models.md, FAQ.md,
+  README.md contain one. (CHANGELOG is history and exempt.)
+- **Test:** `hygiene.test.mjs` → "no shipped surface mentions a retired model".
+
+### US20 — Sync script carries taste, not facts-as-literals
+- **Then** the sync script contains no hardcoded context windows, no
+  FORCE_INCLUDE/MODEL_METADATA tables, and reads facts via `fact_for`.
+- **Test:** `hygiene.test.mjs` → "sync script carries taste, not
+  facts-as-literals".
+
+### US21 — Shell entry points parse
+- **Then** `bash -n` passes on sync + generate + setup scripts.
+- **Test:** `hygiene.test.mjs` → "shell entry points parse".
+
+---
+
+## Epic SAIA-DOCS — the documentation can never lag the catalog
+
+> As a user I want README/skill/FAQ claims to be enforced by CI, so docs
+> never recommend dead models or stale limits again.
+
+### US22 — README model table matches the live catalog exactly
+- **Test:** `docs.test.mjs` → "README model table matches the live catalog
+  exactly" (id set + context windows vs. data/saia-models.json).
+
+### US23 — Documented default model is the shipped default
+- **Test:** `docs.test.mjs` → "documented default model is the shipped
+  default" (`saia/deepseek-v4-flash-0731`).
+
+### US24 — The raw-catalog curl URL is correct
+- **Test:** `docs.test.mjs` → "the raw-catalog curl URL is correct"
+  (https; codeberg 302s plain http silently).
+
+---
+
+## Epic SAIA-CONTRACT — the data file's own structure is consistent
+
+> As a repo consumer I want the data file internally verifiable, so the
+> catalog cannot claim models the API never returned.
+
+### US25 — models[] derives from the recorded live snapshot
+- **Test:** `contract.test.mjs` → "models[] is derived from the recorded live
+  snapshot" (same ids, same input/output modalities).
+
+### US26 — Provenance fields are present and well-formed
+- **Test:** `contract.test.mjs` → "provenance fields are present and
+  well-formed" (parseable generated_at, https source URLs).
