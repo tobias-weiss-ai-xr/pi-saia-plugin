@@ -10,50 +10,37 @@
 //        the documentation, so tool-use and multimodal requests behave correctly.
 //   US4  As a pi user I want the provider to register under id "saia" with the
 //        OpenAI-compatible API, so requests are routed to chat-ai.academiccloud.de.
+//
+// Ground truth is data/saia-models.json (auto-collected from the live SAIA API,
+// the GWDG docs table and scripts/reasoning-models.json — see
+// scripts/collect-saia-model-info.mjs). If these tests fail after a sync, the
+// collected facts and the generated catalog disagree — never "fix" them by
+// editing the fixtures.
 
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import registerSaiaProvider, { SAIA_MODELS } from "../../extensions/index.ts"
 
-// The 18 base (non-alias) models that must always be present.
-const REAL_MODEL_IDS = [
-  "apertus-70b-instruct-2509",
-  "deepseek-v4-flash-0731",
-  "devstral-2-123b-instruct-2512",
-  "gemma-4-31b-it",
-  "glm-4.7",
-  "medgemma-27b-it",
-  "meta-llama-3.1-8b-instruct",
-  "mistral-medium-3.5-128b",
-  "openai-gpt-oss-120b",
-  "qwen3-30b-a3b-instruct-2507",
-  "qwen3.5-122b-a10b",
-  "qwen3.5-397b-a17b",
-  "qwen3.6-27b",
-  "qwen3.6-35b-a3b",
-  "qwen3-coder-next",
-  "qwen3-omni-30b-a3b-instruct",
-  "qwen3.8-2.4t-a95b",
-  "qwen3.8-27b",
-]
+const facts = JSON.parse(readFileSync(new URL("../../data/saia-models.json", import.meta.url), "utf8"))
+const factById = new Map(facts.models.map((model) => [model.id, model]))
 
-const ALLOWED_CONTEXT_WINDOWS = new Set([32768, 131072, 256000])
-const EXPECTED_REASONING_IDS = new Set([
-  "qwen3-30b-a3b-instruct-2507",
-  "qwen3.5-122b-a10b",
-  "qwen3.5-397b-a17b",
-  "qwen3.8-2.4t-a95b",
-  "best-for-reasoning",
-  "best-quality",
-])
+// pi's ProviderModelConfig only expresses text|image; the generator filters.
+const catalogInput = (factModel) => {
+  const filtered = factModel.input.filter((modality) => modality === "text" || modality === "image")
+  return filtered.length ? filtered : ["text"]
+}
 
-const realModels = SAIA_MODELS.filter((m) => REAL_MODEL_IDS.includes(m.id))
-const aliasModels = SAIA_MODELS.filter((m) => !REAL_MODEL_IDS.includes(m.id))
-const realById = new Map(realModels.map((m) => [m.id, m]))
+const REAL_MODEL_IDS = facts.models.map((model) => model.id)
+const realModels = SAIA_MODELS.filter((model) => REAL_MODEL_IDS.includes(model.id))
+const aliasModels = SAIA_MODELS.filter((model) => !REAL_MODEL_IDS.includes(model.id))
+const realById = new Map(realModels.map((model) => [model.id, model]))
+const aliasTarget = (alias) => alias.name.split("→").pop().trim()
 
 test("US1: registers every documented base model (no duplicates)", () => {
+  assert.ok(facts.gaps.api_without_docs.length === 0, "collector gaps must be curated first")
   assert.equal(realModels.length, REAL_MODEL_IDS.length, "base model count drifted")
-  const ids = SAIA_MODELS.map((m) => m.id)
+  const ids = SAIA_MODELS.map((model) => model.id)
   assert.equal(new Set(ids).size, ids.length, "duplicate model ids in catalog")
   for (const id of REAL_MODEL_IDS) {
     assert.ok(realById.has(id), `missing base model: ${id}`)
@@ -73,57 +60,57 @@ test("US1: every base model has the required provider fields", () => {
       model.maxTokens <= model.contextWindow,
       `${model.id} maxTokens (${model.maxTokens}) exceeds contextWindow (${model.contextWindow})`,
     )
-    assert.ok(
-      ALLOWED_CONTEXT_WINDOWS.has(model.contextWindow),
-      `${model.id} unexpected contextWindow ${model.contextWindow}`,
-    )
     assert.ok(model.cost && typeof model.cost.input === "number" && typeof model.cost.output === "number")
   }
 })
 
-test("US3: reasoning flags match the documented reasoning models", () => {
-  const actualReasoning = new Set(SAIA_MODELS.filter((m) => m.reasoning).map((m) => m.id))
-  assert.deepEqual(
-    [...actualReasoning].sort(),
-    [...EXPECTED_REASONING_IDS].sort(),
-    "reasoning flag set does not match documentation",
-  )
-})
-
-test("US3: vision (image) models are exactly the documented multimodal set", () => {
-  const expectedVision = new Set([
-    "gemma-4-31b-it",
-    "medgemma-27b-it",
-    "qwen3.5-122b-a10b",
-    "qwen3.5-397b-a17b",
-    "qwen3.6-35b-a3b",
-    "qwen3-omni-30b-a3b-instruct",
-    "qwen3.8-27b",
-    "fastest-reasoning",
-    "best-for-vision",
-  ])
-  const actualVision = new Set(SAIA_MODELS.filter((m) => m.input.includes("image")).map((m) => m.id))
-  assert.deepEqual([...actualVision].sort(), [...expectedVision].sort(), "vision model set mismatch")
-  // Sanity: known non-vision models must not advertise image input.
-  for (const id of ["glm-4.7", "meta-llama-3.1-8b-instruct", "deepseek-v4-flash-0731", "qwen3-coder-next"]) {
-    assert.ok(!realById.get(id).input.includes("image"), `${id} should not be a vision model`)
+test("US3: reasoning flags match the collected reasoning facts", () => {
+  for (const model of realModels) {
+    assert.equal(
+      model.reasoning,
+      factById.get(model.id).reasoning.supported === true,
+      `${model.id} reasoning flag does not match data/saia-models.json`,
+    )
   }
 })
 
-test("US3: token limits for notable models match the docs", () => {
-  assert.equal(realById.get("qwen3.8-2.4t-a95b").contextWindow, 256000)
-  assert.equal(realById.get("qwen3.8-2.4t-a95b").maxTokens, 65536)
-  assert.equal(realById.get("medgemma-27b-it").contextWindow, 32768)
-  assert.equal(realById.get("medgemma-27b-it").maxTokens, 4096)
-  assert.equal(realById.get("qwen3-omni-30b-a3b-instruct").contextWindow, 32768)
-  assert.equal(realById.get("glm-4.7").contextWindow, 131072)
+test("US3: vision (image) models match the collected modalities", () => {
+  const expectedVision = new Set(
+    facts.models.filter((model) => catalogInput(model).includes("image")).map((model) => model.id),
+  )
+  for (const alias of aliasModels) {
+    if (realById.get(aliasTarget(alias))?.input.includes("image")) expectedVision.add(alias.id)
+  }
+  const actualVision = new Set(SAIA_MODELS.filter((model) => model.input.includes("image")).map((model) => model.id))
+  assert.deepEqual([...actualVision].sort(), [...expectedVision].sort(), "vision model set mismatch")
+})
+
+test("US3: context windows match the collected facts for every base model", () => {
+  for (const model of realModels) {
+    const expected = factById.get(model.id).context_window.tokens
+    assert.ok(expected, `${model.id} has no collected context window`)
+    assert.equal(
+      model.contextWindow,
+      expected,
+      `${model.id} contextWindow ${model.contextWindow} != docs ${expected}`,
+    )
+  }
+})
+
+test("US3: token limits for notable models match the GWDG docs", () => {
+  assert.equal(realById.get("glm-5.3-flash").contextWindow, 1_000_000)
+  assert.equal(realById.get("deepseek-v4-flash-0731").contextWindow, 1_000_000)
+  assert.equal(realById.get("qwen3.6-35b-a3b").contextWindow, 262_000)
+  assert.equal(realById.get("meta-llama-3.1-8b-instruct").contextWindow, 128_000)
+  assert.equal(realById.get("apertus-70b-instruct-2509").contextWindow, 65_000)
 })
 
 test("US2: every alias resolves to a real model and inherits its capabilities", () => {
   assert.ok(aliasModels.length > 0, "expected alias models in catalog")
   for (const alias of aliasModels) {
-    const targetId = alias.name.split("→").pop().trim()
+    const targetId = aliasTarget(alias)
     assert.ok(realById.has(targetId), `alias ${alias.id} points at unknown model ${targetId}`)
+    assert.ok(REAL_MODEL_IDS.includes(targetId), `alias ${alias.id} points at retired model ${targetId}`)
     const target = realById.get(targetId)
     assert.equal(alias.reasoning, target.reasoning, `alias ${alias.id} reasoning flag mismatch`)
     assert.deepEqual(alias.input, target.input, `alias ${alias.id} input modalities mismatch`)
