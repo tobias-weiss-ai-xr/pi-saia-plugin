@@ -1,6 +1,6 @@
 {
   "name": "pi-saia-plugin",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pi package for SAIA (Academic Cloud Hessen) models — GLM, Qwen, DevStral, GPT-OSS. Auto-registers provider, models, and usage skill.",
   "keywords": ["pi-package", "saia", "academic-cloud", "llm", "provider"],
   "type": "module",

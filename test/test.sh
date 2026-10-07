@@ -17,17 +17,17 @@ SKIP_COUNT=0
 
 pass() {
     echo -e "${GREEN}✓${NC} $1"
-    ((PASS_COUNT++))
+    PASS_COUNT=$((PASS_COUNT + 1))
 }
 
 fail() {
     echo -e "${RED}✗${NC} $1"
-    ((FAIL_COUNT++))
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
 skip() {
     echo -e "${YELLOW}⊘${NC} $1"
-    ((SKIP_COUNT++))
+    SKIP_COUNT=$((SKIP_COUNT + 1))
 }
 
 echo_header() {
@@ -222,7 +222,7 @@ test_package_json() {
                 fail "package.json version invalid: $version"
             fi
             
-            if [ "$main" = "./src/saia.ts" ]; then
+            if [ "$main" = "extensions/index.ts" ]; then
                 pass "package.json main is correct: $main"
             else
                 fail "package.json main incorrect: $main"
@@ -359,7 +359,7 @@ test_security() {
     cd "$PROJECT_DIR"
     
     # Check for accidental API key commits
-    if git grep -q "SAIA_API_KEY.*[a-zA-Z0-9]" 2>/dev/null || false; then
+    if git grep -qE 'SAIA_API_KEY[=": ]+(sk-|[A-Za-z0-9_-]{20,})' 2>/dev/null || false; then
         fail "Potential API key found in git history"
     else
         pass "No API keys in git history"

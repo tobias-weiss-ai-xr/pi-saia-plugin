@@ -23,7 +23,29 @@ export SAIA_API_KEY=your_key
 ./scripts/sync-saia-models.sh
 ```
 
-See [`scripts/README.md`](scripts/README.md) for details on automation and force-include options.
+See [`scripts/README.md`](scripts/README.md) for details on automation.
+
+### Machine-Readable Model Catalog (`data/saia-models.json`)
+
+Facts are collected automatically — no manual table maintenance:
+
+```bash
+node scripts/collect-saia-model-info.mjs   # merges 3 sources → data/saia-models.json
+```
+
+1. **Live API** (`/v1/models`) → ids, status, input/output modalities
+2. **GWDG docs table** → context windows, release dates, recommended sampling, org
+3. [`scripts/reasoning-models.json`](scripts/reasoning-models.json) → reasoning API params per family (curated, with vendor sources; the collector flags any live model without an entry)
+
+The result is a clean, unopinionated catalog — one curl gets you every SAIA model
+with context size, modalities and reasoning controls, reusable by any client:
+
+```bash
+curl -s https://raw.githubusercontent.com/tobias-weiss-ai-xr/pi-saia-plugin/main/data/saia-models.json
+```
+
+Only output limits, categories and aliases remain opinionated (they live in
+`scripts/sync-saia-models.sh`).
 
 ## Features
 
