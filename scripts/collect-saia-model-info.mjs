@@ -198,7 +198,7 @@ async function main() {
   const outPath = resolve(args[outIndex + 1] ?? "data/saia-models.json")
   const offline = args.includes("--offline")
   const strict = args.includes("--strict")
-  const scriptDir = new URL(".", import.meta.url).pathname
+  const scriptDir = dirname(fileURLToPath(import.meta.url))
 
   let previous
   try {
