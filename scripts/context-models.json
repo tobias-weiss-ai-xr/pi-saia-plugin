@@ -1,0 +1,29 @@
+{
+  "_comment": "Curated context-window facts (vendor-verified) for live SAIA models that the GWDG docs table has not caught up with yet (the new B200 platform models). Keyed by model id. This is the ONLY fallback when docs.context_window is missing — never a guess, always a cited vendor fact (Release notes / HF model card). This file is the companion to reasoning-models.json (reasoning facts). Docs updates supersede these entries.",
+  "entries": {
+    "deepseek-v4.1-flash-1017": {
+      "display": "1M",
+      "tokens": 1048576,
+      "sources": [
+        "https://api-docs.deepseek.com/news/",
+        "https://huggingface.co/models?search=DeepSeek"
+      ]
+    },
+    "mistral-large-4-1t-a52b": {
+      "display": "1M",
+      "tokens": 1048576,
+      "sources": [
+        "https://docs.mistral.ai/models/mistral-large-4",
+        "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B"
+      ]
+    },
+    "eurollm-22b-instruct-2512": {
+      "display": "32K",
+      "tokens": 32768,
+      "sources": [
+        "https://huggingface.co/utter-project/EuroLLM-22B-Instruct-2512",
+        "https://arxiv.org/html/2602.05879v1"
+      ]
+    }
+  }
+}

@@ -13,7 +13,7 @@
  * curated scripts/reasoning-models.json); output limits, thinking-level maps,
  * categories and the alias table are the generator's "taste" tables.
  *
- * Last sync: 2026-10-07 07:29:48
+ * Last sync: 2026-11-02 20:32:40
  */
 
 import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-coding-agent";
@@ -56,14 +56,15 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
 
   // ── General ──────────────────────────────────────────
   {
-    id: "apertus-70b-instruct-2509",
-    name: "Apertus 70B Instruct 2509 (SAIA)",
-    reasoning: false,
+    id: "deepseek-v4.1-flash-1017",
+    name: "DeepSeek V4.1 Flash 1017 (SAIA)",
+    reasoning: true,
+    thinkingLevelMap: {"minimal":"low","low":"low","medium":"high","high":"high","xhigh":"max","max":"max"},
     compat: { supportsDeveloperRole: false },
     input: ["text"],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 65000,
-    maxTokens: 8192,
+    contextWindow: 1048576,
+    maxTokens: 16384,
   },
   {
     id: "deepseek-v4-flash-0731",
@@ -76,20 +77,16 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
     contextWindow: 1000000,
     maxTokens: 32768,
   },
-
-  // ── Agentic ──────────────────────────────────────────
   {
-    id: "devstral-2-123b-instruct-2512",
-    name: "Devstral 2 123B Instruct 2512 (SAIA)",
+    id: "eurollm-22b-instruct-2512",
+    name: "EuroLLM 22B Instruct 2512 (SAIA)",
     reasoning: false,
     compat: { supportsDeveloperRole: false },
     input: ["text"],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 256000,
+    contextWindow: 32768,
     maxTokens: 16384,
   },
-
-  // ── General ──────────────────────────────────────────
   {
     id: "gemma-4-31b-it",
     name: "Gemma 4 31B Instruct (SAIA)",
@@ -99,6 +96,17 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 256000,
     maxTokens: 8192,
+  },
+  {
+    id: "glm-5.3",
+    name: "GLM 5.3 Flash (SAIA)",
+    reasoning: true,
+    thinkingLevelMap: {"minimal":"low","low":"low","medium":"high","high":"high","xhigh":"max","max":"max"},
+    compat: { supportsDeveloperRole: false },
+    input: ["text"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 1000000,
+    maxTokens: 16384,
   },
 
   // ── Agentic ──────────────────────────────────────────
@@ -125,30 +133,48 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
     contextWindow: 128000,
     maxTokens: 4096,
   },
-
-  // ── Agentic ──────────────────────────────────────────
   {
-    id: "mistral-medium-3.5-128b",
-    name: "Mistral Medium 3.5 128B (SAIA)",
-    reasoning: false,
-    compat: { supportsDeveloperRole: false },
-    input: ["text"],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 256000,
-    maxTokens: 8192,
-  },
-
-  // ── Large Context ──────────────────────────────────────────
-  {
-    id: "openai-gpt-oss-120b",
-    name: "GPT OSS 120B (SAIA)",
+    id: "mistral-large-4-1t-a52b",
+    name: "Mistral Large 4 1T A52B (SAIA)",
     reasoning: true,
     thinkingLevelMap: {"minimal":"low","low":"low","medium":"medium","high":"high","xhigh":"high","max":"high"},
     compat: { supportsDeveloperRole: false },
-    input: ["text"],
+    input: ["text", "image"],
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 128000,
-    maxTokens: 8192,
+    contextWindow: 1048576,
+    maxTokens: 16384,
+  },
+
+  // ── Reasoning ──────────────────────────────────────────
+  {
+    id: "qwen3.5-397b-a17b",
+    name: "Qwen 3.5 397B A17B (SAIA)",
+    reasoning: true,
+    compat: { supportsDeveloperRole: false },
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 256000,
+    maxTokens: 32768,
+  },
+  {
+    id: "qwen3.6-35b-a3b",
+    name: "Qwen 3.6 35B A3B (SAIA)",
+    reasoning: true,
+    compat: { supportsDeveloperRole: false },
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 262000,
+    maxTokens: 16384,
+  },
+  {
+    id: "qwen3.8-27b",
+    name: "Qwen 3.8 27B (SAIA)",
+    reasoning: true,
+    compat: { supportsDeveloperRole: false },
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 262000,
+    maxTokens: 32768,
   },
 
   // ── General ──────────────────────────────────────────
@@ -185,38 +211,6 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 256000,
     maxTokens: 4096,
-  },
-
-  // ── Reasoning ──────────────────────────────────────────
-  {
-    id: "qwen3.5-397b-a17b",
-    name: "Qwen 3.5 397B A17B (SAIA)",
-    reasoning: true,
-    compat: { supportsDeveloperRole: false },
-    input: ["text", "image"],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 256000,
-    maxTokens: 32768,
-  },
-  {
-    id: "qwen3.6-35b-a3b",
-    name: "Qwen 3.6 35B A3B (SAIA)",
-    reasoning: true,
-    compat: { supportsDeveloperRole: false },
-    input: ["text", "image"],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 262000,
-    maxTokens: 16384,
-  },
-  {
-    id: "qwen3.8-27b",
-    name: "Qwen 3.8 27B (SAIA)",
-    reasoning: true,
-    compat: { supportsDeveloperRole: false },
-    input: ["text"],
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    contextWindow: 262000,
-    maxTokens: 32768,
   },
 ];
 

@@ -1,261 +1,245 @@
 {
-  "generated_at": "2026-10-07T04:29:00.874Z",
+  "generated_at": "2026-11-02T19:32:39.840Z",
   "sources": {
     "live_api": "https://chat-ai.academiccloud.de/v1/models",
     "docs": "https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html",
     "reasoning": "scripts/reasoning-models.json (curated; see entry sources)",
+    "context": "scripts/context-models.json (curated, vendor-verified — for new B200-platform models the GWDG docs have not listed yet)",
     "notes": "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them."
   },
   "live": {
     "models": [
       {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "apertus-70b-instruct-2509",
-        "name": "Apertus 70B Instruct 2509",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "devstral-2-123b-instruct-2512",
-        "name": "Devstral 2 123B Instruct 2512",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "qwen3.8-27b",
-        "name": "Qwen 3.8 27B",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
         "id": "deepseek-v4-flash-0731",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1782907438,
         "name": "DeepSeek V4 Flash 0731",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
-        "object": "model",
         "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
         "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "glm-5.3-flash",
-        "name": "GLM 5.3 Flash",
-        "input": [
-          "text",
-          "image",
-          "video"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "qwen3-coder-next",
-        "name": "Qwen 3 Coder Next",
         "input": [
           "text"
         ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "qwen3-omni-30b-a3b-instruct",
-        "name": "Qwen 3 Omni 30B A3B Instruct",
-        "input": [
-          "text",
-          "image",
-          "audio"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 1,
-        "owned_by": "chat-ai",
-        "id": "mistral-medium-3.5-128b",
-        "name": "Mistral Medium 3.5 128B",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
-        "output": [
-          "text"
-        ]
-      },
-      {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "qwen3.5-397b-a17b",
-        "name": "Qwen 3.5 397B A17B",
-        "input": [
-          "text",
-          "image"
-        ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
         "output": [
           "text",
           "thought"
         ]
       },
       {
-        "demand": 0,
+        "id": "deepseek-v4.1-flash-1017",
+        "object": "model",
         "owned_by": "chat-ai",
+        "created": 1793036378,
+        "name": "DeepSeek V4.1 Flash 1017",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text",
+          "thought"
+        ]
+      },
+      {
+        "id": "eurollm-22b-instruct-2512",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1785482424,
+        "name": "EuroLLM 22B Instruct 2512",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      {
         "id": "gemma-4-31b-it",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1777986871,
         "name": "Gemma 4 31B Instruct",
+        "status": "ready",
+        "demand": 0,
         "input": [
           "text",
           "image"
         ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
         "output": [
-          "text"
+          "text",
+          "thought"
         ]
       },
       {
-        "demand": 0,
+        "id": "glm-5.3",
+        "object": "model",
         "owned_by": "chat-ai",
-        "id": "qwen3.6-35b-a3b",
-        "name": "Qwen 3.6 35B A3B",
+        "created": 1793031766,
+        "name": "GLM 5.3",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text",
+          "thought"
+        ]
+      },
+      {
+        "id": "glm-5.3-flash",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1787908914,
+        "name": "GLM 5.3 Flash",
+        "status": "ready",
+        "demand": 0,
         "input": [
           "text",
-          "image"
+          "image",
+          "video"
         ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
         "output": [
-          "text"
+          "text",
+          "thought"
         ]
       },
       {
-        "demand": 0,
-        "owned_by": "chat-ai",
         "id": "meta-llama-3.1-8b-instruct",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1772676421,
         "name": "Meta Llama 3.1 8B Instruct",
+        "status": "ready",
+        "demand": 0,
         "input": [
           "text"
         ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
         "output": [
           "text"
         ]
       },
       {
-        "demand": 0,
-        "owned_by": "chat-ai",
-        "id": "openai-gpt-oss-120b",
-        "name": "OpenAI GPT OSS 120B",
-        "input": [
-          "text"
-        ],
-        "created": 1791347340,
+        "id": "mistral-large-4-1t-a52b",
         "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1793371638,
+        "name": "Mistral Large 4 1T A52B",
         "status": "ready",
+        "demand": 0,
+        "input": [
+          "text",
+          "image"
+        ],
         "output": [
-          "text"
+          "text",
+          "thought"
         ]
       },
       {
-        "demand": 0,
-        "owned_by": "chat-ai",
         "id": "qwen3-30b-a3b-instruct-2507",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1772676429,
         "name": "Qwen 3 30B A3B Instruct 2507",
+        "status": "ready",
+        "demand": 0,
         "input": [
           "text"
         ],
-        "created": 1791347340,
-        "object": "model",
-        "status": "ready",
         "output": [
           "text"
+        ]
+      },
+      {
+        "id": "qwen3-coder-next",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1782907374,
+        "name": "Qwen 3 Coder Next",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      {
+        "id": "qwen3-omni-30b-a3b-instruct",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1772676409,
+        "name": "Qwen 3 Omni 30B A3B Instruct",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text",
+          "image",
+          "audio"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      {
+        "id": "qwen3.5-397b-a17b",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1776865347,
+        "name": "Qwen 3.5 397B A17B",
+        "status": "ready",
+        "demand": 3,
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text",
+          "thought"
+        ]
+      },
+      {
+        "id": "qwen3.6-35b-a3b",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1777985923,
+        "name": "Qwen 3.6 35B A3B",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text",
+          "image"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      {
+        "id": "qwen3.8-27b",
+        "object": "model",
+        "owned_by": "chat-ai",
+        "created": 1787844341,
+        "name": "Qwen 3.8 27B",
+        "status": "ready",
+        "demand": 0,
+        "input": [
+          "text",
+          "image",
+          "video"
+        ],
+        "output": [
+          "text",
+          "thought"
         ]
       }
     ]
   },
   "models": [
-    {
-      "id": "apertus-70b-instruct-2509",
-      "name": "Apertus 70B Instruct 2509",
-      "org": "Swiss AI",
-      "status": "ready",
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ],
-      "context_window": {
-        "display": "65k",
-        "tokens": 65000
-      },
-      "released": "Sep 2025",
-      "reasoning": {
-        "supported": false
-      },
-      "recommended": {
-        "temperature": 0.8,
-        "top_p": 0.9
-      },
-      "notes": {
-        "advantages": "Fully open-source, Multilingual"
-      }
-    },
     {
       "id": "deepseek-v4-flash-0731",
       "name": "DeepSeek V4 Flash 0731",
@@ -265,7 +249,8 @@
         "text"
       ],
       "output": [
-        "text"
+        "text",
+        "thought"
       ],
       "context_window": {
         "display": "1M",
@@ -306,9 +291,52 @@
       }
     },
     {
-      "id": "devstral-2-123b-instruct-2512",
-      "name": "Devstral 2 123B Instruct 2512",
-      "org": "Mistral",
+      "id": "deepseek-v4.1-flash-1017",
+      "name": "DeepSeek V4.1 Flash 1017",
+      "status": "ready",
+      "input": [
+        "text"
+      ],
+      "output": [
+        "text",
+        "thought"
+      ],
+      "context_window": {
+        "display": "1M",
+        "tokens": 1048576,
+        "sources": [
+          "https://api-docs.deepseek.com/news/",
+          "https://huggingface.co/models?search=DeepSeek"
+        ]
+      },
+      "reasoning": {
+        "supported": true,
+        "toggle": {
+          "param": "thinking.type",
+          "values": [
+            "enabled",
+            "disabled"
+          ],
+          "default": "enabled"
+        },
+        "effort": {
+          "param": "reasoning_effort",
+          "values": [
+            "low",
+            "high",
+            "max"
+          ],
+          "default": "high"
+        },
+        "sources": [
+          "https://api-docs.deepseek.com/news/",
+          "https://huggingface.co/deepseek-ai"
+        ]
+      }
+    },
+    {
+      "id": "eurollm-22b-instruct-2512",
+      "name": "EuroLLM 22B Instruct 2512",
       "status": "ready",
       "input": [
         "text"
@@ -317,15 +345,18 @@
         "text"
       ],
       "context_window": {
-        "display": "256K",
-        "tokens": 256000
+        "display": "32K",
+        "tokens": 32768,
+        "sources": [
+          "https://huggingface.co/utter-project/EuroLLM-22B-Instruct-2512",
+          "https://arxiv.org/html/2602.05879v1"
+        ]
       },
-      "released": "Dec 2025",
       "reasoning": {
-        "supported": false
-      },
-      "notes": {
-        "advantages": "Coding, agentic tasks"
+        "supported": false,
+        "sources": [
+          "https://huggingface.co/utter-project/EuroLLM-22B-Instruct-2512"
+        ]
       }
     },
     {
@@ -338,7 +369,8 @@
         "image"
       ],
       "output": [
-        "text"
+        "text",
+        "thought"
       ],
       "context_window": {
         "display": "256k",
@@ -353,6 +385,55 @@
       }
     },
     {
+      "id": "glm-5.3",
+      "name": "GLM 5.3 Flash",
+      "org": "Z.ai",
+      "status": "ready",
+      "input": [
+        "text"
+      ],
+      "output": [
+        "text",
+        "thought"
+      ],
+      "context_window": {
+        "display": "1M",
+        "tokens": 1000000
+      },
+      "released": "Feb 2026",
+      "reasoning": {
+        "supported": true,
+        "toggle": {
+          "param": "thinking.type",
+          "values": [
+            "enabled"
+          ],
+          "default": "enabled",
+          "note": "forced thinking — cannot be disabled"
+        },
+        "effort": {
+          "param": "reasoning_effort",
+          "values": [
+            "low",
+            "high",
+            "max"
+          ],
+          "default": "max"
+        },
+        "sources": [
+          "https://docs.z.ai/guides/vlm/glm-5.3-flash",
+          "https://huggingface.co/zai-org/GLM-5.3-Flash"
+        ]
+      },
+      "recommended": {
+        "temperature": 1,
+        "top_p": 0.95
+      },
+      "notes": {
+        "advantages": "Multimodal, great coding & agentic performance"
+      }
+    },
+    {
       "id": "glm-5.3-flash",
       "name": "GLM 5.3 Flash",
       "org": "Z.ai",
@@ -363,7 +444,8 @@
         "video"
       ],
       "output": [
-        "text"
+        "text",
+        "thought"
       ],
       "context_window": {
         "display": "1M",
@@ -426,44 +508,25 @@
       }
     },
     {
-      "id": "mistral-medium-3.5-128b",
-      "name": "Mistral Medium 3.5 128B",
-      "org": "Mistral",
+      "id": "mistral-large-4-1t-a52b",
+      "name": "Mistral Large 4 1T A52B",
       "status": "ready",
       "input": [
-        "text"
+        "text",
+        "image"
       ],
       "output": [
-        "text"
+        "text",
+        "thought"
       ],
       "context_window": {
-        "display": "256K",
-        "tokens": 256000
+        "display": "1M",
+        "tokens": 1048576,
+        "sources": [
+          "https://docs.mistral.ai/models/mistral-large-4",
+          "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B"
+        ]
       },
-      "released": "Apr 2026",
-      "reasoning": {
-        "supported": false
-      },
-      "notes": {
-        "advantages": "Great overall performance"
-      }
-    },
-    {
-      "id": "openai-gpt-oss-120b",
-      "name": "GPT OSS 120B",
-      "org": "OpenAI",
-      "status": "ready",
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ],
-      "context_window": {
-        "display": "128k",
-        "tokens": 128000
-      },
-      "released": "Aug 2025",
       "reasoning": {
         "supported": true,
         "effort": {
@@ -473,15 +536,12 @@
             "medium",
             "high"
           ],
-          "default": "medium"
+          "default": "high"
         },
         "sources": [
-          "https://platform.openai.com/docs/guides/reasoning",
-          "https://huggingface.co/openai/gpt-oss-120b"
+          "https://docs.mistral.ai/models/mistral-large-4",
+          "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B"
         ]
-      },
-      "notes": {
-        "advantages": "Great overall performance, fast"
       }
     },
     {
@@ -645,10 +705,13 @@
       "org": "Alibaba Cloud",
       "status": "ready",
       "input": [
-        "text"
+        "text",
+        "image",
+        "video"
       ],
       "output": [
-        "text"
+        "text",
+        "thought"
       ],
       "context_window": {
         "display": "262K",

@@ -106,7 +106,7 @@ test("US3: token limits for notable models match the GWDG docs", () => {
   assert.equal(realById.get("deepseek-v4-flash-0731").contextWindow, 1_000_000)
   assert.equal(realById.get("qwen3.6-35b-a3b").contextWindow, 262_000)
   assert.equal(realById.get("meta-llama-3.1-8b-instruct").contextWindow, 128_000)
-  assert.equal(realById.get("apertus-70b-instruct-2509").contextWindow, 65_000)
+  assert.equal(realById.get("qwen3-omni-30b-a3b-instruct").contextWindow, 256_000)
 })
 
 test("US2: every alias resolves to a real model and inherits its capabilities", () => {

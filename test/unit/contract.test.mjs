@@ -29,7 +29,7 @@ test("US-T1: models[] is derived from the recorded live snapshot", () => {
 test("US-T2: provenance fields are present and well-formed", () => {
   assert.ok(!Number.isNaN(Date.parse(facts.generated_at)), "generated_at is not a date")
   for (const [key, url] of Object.entries(facts.sources)) {
-    if (key === "notes" || key === "reasoning") continue
+    if (key === "notes" || key === "reasoning" || key === "context") continue
     assert.ok(String(url).startsWith("https://"), `sources.${key} must be an https URL`)
   }
 })

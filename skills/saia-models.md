@@ -16,6 +16,9 @@ they cannot drift from what the provider ships.
 
 | Model ID | Name | Ctx | Out | Vision | Thinking levels |
 |----------|------|-----|-----|--------|-----------------|
+| `saia/deepseek-v4.1-flash-1017` | DeepSeek V4.1 Flash | 1M | 16K | — | low, high, max |
+| `saia/glm-5.3` | GLM 5.3 | 1M | 16K | — | on/off |
+| `saia/mistral-large-4-1t-a52b` | Mistral Large 4 1T A52B | 1M | 16K | 🖼 | low, medium, high |
 | `saia/qwen3.5-397b-a17b` | Qwen3.5 397B | 256K | 32K | 🖼 | on/off |
 | `saia/qwen3.6-35b-a3b` | Qwen3.6 35B | 262K | 16K | 🖼 | on/off |
 | `saia/qwen3.8-27b` | Qwen3.8 27B | 262K | 32K | — | on/off |
@@ -36,19 +39,16 @@ they cannot drift from what the provider ships.
 
 | Model ID | Name | Ctx | Out | Vision | Thinking levels |
 |----------|------|-----|-----|--------|-----------------|
-| `saia/devstral-2-123b-instruct-2512` | DevStral 2 123B | 256K | 16K | — | — |
 | `saia/glm-5.3-flash` | GLM 5.3 Flash | 1M | 32K | 🖼 | low, high, max |
-| `saia/mistral-medium-3.5-128b` | Mistral Medium 3.5 128B | 256K | 8K | — | — |
 
 **General**
 
 | Model ID | Name | Ctx | Out | Vision | Thinking levels |
 |----------|------|-----|-----|--------|-----------------|
-| `saia/apertus-70b-instruct-2509` | Apertus 70B | 65K | 8K | — | — |
 | `saia/deepseek-v4-flash-0731` | DeepSeek V4 Flash | 1M | 32K | — | low, high, max |
+| `saia/eurollm-22b-instruct-2512` | EuroLLM 22B Instruct | 32K | 16K | — | — |
 | `saia/gemma-4-31b-it` | Gemma 4 31B | 256K | 8K | 🖼 | — |
 | `saia/meta-llama-3.1-8b-instruct` | Meta Llama 3.1 8B | 128K | 4K | — | — |
-| `saia/openai-gpt-oss-120b` | GPT-OSS 120B | 128K | 8K | — | low, medium, high |
 | `saia/qwen3-30b-a3b-instruct-2507` | Qwen3 30B A3B | 256K | 16K | — | — |
 
 > `Vision` comes from the `input` modalities the live API reports. See
@@ -81,9 +81,11 @@ models whose vendor API takes discrete effort values:
 
 - `saia/deepseek-v4-flash-0731` — accepts `low`, `high`, `max`.
 
+- `saia/deepseek-v4.1-flash-1017` — accepts `low`, `high`, `max`.
+
 - `saia/glm-5.3-flash` — accepts `low`, `high`, `max`.
 
-- `saia/openai-gpt-oss-120b` — accepts `low`, `medium`, `high`.
+- `saia/mistral-large-4-1t-a52b` — accepts `low`, `medium`, `high`.
 
 - `saia/qwen3.5-397b-a17b` — thinking is a toggle (`enable_thinking` on/off), not an effort level, so it gets no `thinkingLevelMap`; pi's default applies.
 

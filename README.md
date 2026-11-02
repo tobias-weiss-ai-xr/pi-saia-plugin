@@ -102,14 +102,14 @@ Then reload or restart pi:
 
 | Model ID | Name | Ctx | Out | Reasoning | Vision | Category |
 |----------|------|-----|-----|-----------|--------|----------|
-| `saia/apertus-70b-instruct-2509` | Apertus 70B | 65K | 8K | — | — | general |
 | `saia/deepseek-v4-flash-0731` | DeepSeek V4 Flash | 1M | 32K | ✅ | — | reasoning |
-| `saia/devstral-2-123b-instruct-2512` | Devstral 2 123B | 256K | 16K | — | — | agentic |
+| `saia/deepseek-v4.1-flash-1017` | DeepSeek V4.1 Flash | 1048576 | 16K | ✅ | — | reasoning |
+| `saia/eurollm-22b-instruct-2512` | EuroLLM 22B Instruct | 32768 | 16K | — | — | general |
 | `saia/gemma-4-31b-it` | Gemma 4 31B | 256K | 8K | — | 🖼 | vision |
+| `saia/glm-5.3` | GLM 5.3 | 1M | 16K | ✅ | — | reasoning |
 | `saia/glm-5.3-flash` | GLM 5.3 Flash | 1M | 32K | ✅ | 🖼 | agentic |
 | `saia/meta-llama-3.1-8b-instruct` | Llama 3.1 8B | 128K | 4K | — | — | general |
-| `saia/mistral-medium-3.5-128b` | Mistral Medium 3.5 128B | 256K | 8K | — | — | agentic |
-| `saia/openai-gpt-oss-120b` | GPT-OSS 120B | 128K | 8K | ✅ | — | reasoning |
+| `saia/mistral-large-4-1t-a52b` | Mistral Large 4 1T A52B | 1048576 | 16K | ✅ | 🖼 | reasoning |
 | `saia/qwen3-30b-a3b-instruct-2507` | Qwen3 30B A3B | 256K | 16K | — | — | reasoning |
 | `saia/qwen3-coder-next` | Qwen3 Coder Next | 256K | 16K | — | — | coder |
 | `saia/qwen3-omni-30b-a3b-instruct` | Qwen3 Omni 30B | 256K | 4K | — | 🖼 | vision |

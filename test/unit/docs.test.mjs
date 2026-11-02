@@ -26,7 +26,7 @@ const modelsSection = readme.match(/## Available Models([\s\S]*?)(?=## Model Ali
 
 function readmeRows() {
   const rows = new Map()
-  for (const [, id, contextDisplay] of modelsSection.matchAll(/^\| `saia\/([^`]+)` \|[^\n]*?\| (\d+K|1M) \|/gm)) {
+  for (const [, id, contextDisplay] of modelsSection.matchAll(/^\| `saia\/([^`]+)` \|[^\n]*?\| (\d+K|1M|\d+) \|/gm)) {
     rows.set(id, parseContextWindow(contextDisplay))
   }
   return rows

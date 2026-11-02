@@ -148,9 +148,15 @@ export function reasoningFor(id, entries) {
   return reasoning
 }
 
+// Curated, vendor-verified context window for a live model the GWDG docs have
+// not caught up with (the new B200 platform models). Never a guess.
+export function contextFor(id, contextWindows) {
+  return contextWindows?.[id] ?? null
+}
+
 // Merge live API models with parsed docs rows and curated reasoning entries.
 // Pure: no network, no fs — the test suite drives this directly.
-export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [] }) {
+export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [], contextWindows = {} }) {
   const gaps = { api_without_docs: [], docs_without_api: [], reasoning_unknown: [] }
   const docsRows = docsHtml ? parseDocsTables(docsHtml) : []
 
@@ -158,12 +164,13 @@ export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [] 
   const usedDocsRows = new Set()
   for (const model of [...liveModels].sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
     const docs = matchDocsRow(model.id, docsRows)
-    if (!docs) gaps.api_without_docs.push(model.id)
-    else usedDocsRows.add(docs)
+    if (!docs && !contextFor(model.id, contextWindows)) gaps.api_without_docs.push(model.id)
+    else if (docs) usedDocsRows.add(docs)
 
     const reasoning = reasoningFor(model.id, reasoningEntries)
     if (reasoning.supported === null) gaps.reasoning_unknown.push(model.id)
 
+    const curatedCtx = docs ? null : contextFor(model.id, contextWindows)
     models.push({
       id: model.id,
       name: docs?.name ?? model.name ?? model.id,
@@ -171,7 +178,7 @@ export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [] 
       status: model.status ?? "ready",
       input: model.input ?? ["text"],
       output: model.output ?? ["text"],
-      context_window: docs?.context_window ?? { display: null, tokens: null },
+      context_window: docs?.context_window ?? curatedCtx ?? { display: null, tokens: null },
       released: docs?.released,
       reasoning,
       recommended: docs?.recommended,
@@ -189,6 +196,11 @@ export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [] 
 
 async function loadReasoningEntries(scriptDir) {
   const raw = JSON.parse(await readFile(resolve(scriptDir, "reasoning-models.json"), "utf8"))
+  return raw.entries
+}
+
+async function loadContextWindows(scriptDir) {
+  const raw = JSON.parse(await readFile(resolve(scriptDir, "context-models.json"), "utf8"))
   return raw.entries
 }
 
@@ -224,7 +236,8 @@ async function main() {
   }
 
   const reasoningEntries = await loadReasoningEntries(scriptDir)
-  const { models, gaps } = buildCatalog({ liveModels, docsHtml, reasoningEntries })
+  const contextWindows = await loadContextWindows(scriptDir)
+  const { models, gaps } = buildCatalog({ liveModels, docsHtml, reasoningEntries, contextWindows })
 
   const catalog = {
     generated_at: new Date().toISOString(),
@@ -232,6 +245,7 @@ async function main() {
       live_api: `${API_BASE}/models`,
       docs: DOCS_URL,
       reasoning: "scripts/reasoning-models.json (curated; see entry sources)",
+      context: "scripts/context-models.json (curated, vendor-verified — for new B200-platform models the GWDG docs have not listed yet)",
       notes:
         "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them.",
     },
