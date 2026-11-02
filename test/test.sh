@@ -819,9 +819,14 @@ PY
     fi
 
     # The shell inside every workflow step must at least parse.
-    if python3 - <<'PY' >/tmp/saia-workflow-scripts.txt 2>/dev/null
+    # NB: scratch lives INSIDE the repo (not /tmp) — Windows python resolves
+    # /tmp to C:\tmp while Git Bash's glob reads the MSYS temp dir, so a shared
+    # /tmp would silently produce "no steps found" on Windows. Same bug family
+    # as the collector script dir resolution.
+    local scratch=".tmp-workflow-steps"
+    if python3 - <<'PY' 2>/dev/null
 import glob, yaml, os
-out = "/tmp/saia-workflow-scripts"
+out = ".tmp-workflow-steps"
 os.makedirs(out, exist_ok=True)
 n = 0
 for f in sorted(glob.glob(".github/workflows/*.yml")):
@@ -835,14 +840,14 @@ print(n)
 PY
     then
         local broken=0 total=0
-        for script in /tmp/saia-workflow-scripts/*.sh; do
+        for script in "$scratch"/*.sh; do
             [ -f "$script" ] || continue
             total=$((total + 1))
             bash -n "$script" || { broken=$((broken + 1)); fail "shell syntax error in $script"; }
         done
         [ "$total" -gt 0 ] || fail "found no workflow shell steps to check"
         [ "$broken" -eq 0 ] && pass "all $total workflow shell steps parse"
-        rm -rf /tmp/saia-workflow-scripts
+        rm -rf "$scratch"
     else
         skip "workflow shell syntax (could not extract run steps)"
     fi

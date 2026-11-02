@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **SAIA model catalog refreshed from the live `/v1/models` endpoint
+  (2026-11-02)**: adds `deepseek-v4.1-flash-1017`, `eurollm-22b-instruct-2512`,
+  `glm-5.3`, `meta-llama-3.1-8b-instruct` and `mistral-large-4-1t-a52b`; retires
+  `apertus-70b-instruct-2509`, `devstral-2-123b-instruct-2512`,
+  `mistral-medium-3.5-128b` and `openai-gpt-oss-120b`. Context windows for the
+  new B200-platform models come from the new curated `scripts/context-models.json`
+  (vendor-verified, for models the GWDG docs table has not listed yet) instead
+  of a guess.
+
 ### Fixed
 - **Every model alias returned `404 Model Not Found`.** Aliases were registered
   as pi models but nothing rewrote them, and pi forwards an unrecognised model

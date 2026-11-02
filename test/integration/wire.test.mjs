@@ -161,11 +161,12 @@ test("wire: the API key env reference reaches the Authorization header", { skip 
 })
 
 test("wire: --thinking sends a reasoning_effort the vendor accepts", { skip }, () => {
-  // The regression this guards: openai-gpt-oss-120b rejects `minimal` with
+  // The regression this guards: openai-gpt-oss-120b (retired; this test now
+  // pins deepseek-v4-flash-0731) rejects `minimal` with
   // `400 ... reasoning_effort='minimal' is not supported by Harmony`, and pi's
   // default mapping sends exactly that. A curated thinkingLevelMap fixes it, so
   // assert the *sent* value is in the vendor's set for every pi level.
-  const modelId = "openai-gpt-oss-120b"
+  const modelId = "deepseek-v4-flash-0731"
   const accepted = ACCEPTED_EFFORTS.get(modelId)
   assert.ok(accepted, `${modelId} should have curated effort values in data/saia-models.json`)
 

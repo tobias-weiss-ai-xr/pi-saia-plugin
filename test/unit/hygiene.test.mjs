@@ -13,6 +13,16 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
+
+// Git Bash's bash only parses POSIX-style paths; a `fileURLToPath` result like
+// C:\Users\... breaks `bash -n` the same way it broke the collector script.
+function posixPathForBash(url) {
+  const filePath = fileURLToPath(url)
+  return process.platform === "win32"
+    ? execFileSync("cygpath", ["-u", filePath], { encoding: "utf8" }).trim()
+    : filePath
+}
 
 const RETIRED_IDS = ["glm-4.7", "qwen3.8-2.4t-a95b", "qwen3.5-122b-a10b", "qwen3.6-27b", "medgemma-27b-it"]
 
@@ -48,6 +58,6 @@ test("US-H2: sync script carries taste, not facts-as-literals", () => {
 
 test("US-H3: shell entry points parse", () => {
   for (const script of ["scripts/sync-saia-models.sh", "src/generate-saia-config.sh", "src/setup-wizard.sh"]) {
-    execFileSync("bash", ["-n", new URL(`../../${script}`, import.meta.url).pathname], { stdio: "pipe" })
+    execFileSync("bash", ["-n", posixPathForBash(new URL(`../../${script}`, import.meta.url))], { stdio: "pipe" })
   }
 })
