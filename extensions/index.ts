@@ -13,7 +13,7 @@
  * curated scripts/reasoning-models.json); output limits, thinking-level maps,
  * categories and the alias table are the generator's "taste" tables.
  *
- * Last sync: 2026-11-02 20:32:40
+ * Last sync: 2026-11-02 21:16:25
  */
 
 import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-coding-agent";

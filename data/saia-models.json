@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-11-02T19:32:39.840Z",
+  "generated_at": "2026-11-02T20:16:25.467Z",
   "sources": {
     "live_api": "https://chat-ai.academiccloud.de/v1/models",
     "docs": "https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html",
     "reasoning": "scripts/reasoning-models.json (curated; see entry sources)",
-    "context": "scripts/context-models.json (curated, vendor-verified — for new B200-platform models the GWDG docs have not listed yet)",
-    "notes": "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them."
+    "context": "scripts/context-models.json (curated, vendor-verified — more accurate context for new B200-platform models); unknown models assume the platform max (1M)",
+    "notes": "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them. Live models without a docs row or curated context assume the platform-max context (1048576) instead of being held back."
   },
   "live": {
     "models": [

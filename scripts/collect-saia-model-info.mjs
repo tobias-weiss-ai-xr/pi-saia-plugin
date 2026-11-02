@@ -148,6 +148,12 @@ export function reasoningFor(id, entries) {
   return reasoning
 }
 
+// Relaxed 'never guess' rule: if a live model has neither a docs row nor a
+// curated context, we assume the maximum context the platform serves rather
+// than holding the model back. The docs/curated values win when known.
+// shortcut: assumes 1M for unknown models; replace if the platform's ceiling grows.
+const ASSUMED_MAX_CONTEXT = { display: "1M", tokens: 1048576 }
+
 // Curated, vendor-verified context window for a live model the GWDG docs have
 // not caught up with (the new B200 platform models). Never a guess.
 export function contextFor(id, contextWindows) {
@@ -164,8 +170,7 @@ export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [],
   const usedDocsRows = new Set()
   for (const model of [...liveModels].sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
     const docs = matchDocsRow(model.id, docsRows)
-    if (!docs && !contextFor(model.id, contextWindows)) gaps.api_without_docs.push(model.id)
-    else if (docs) usedDocsRows.add(docs)
+    if (docs) usedDocsRows.add(docs)
 
     const reasoning = reasoningFor(model.id, reasoningEntries)
     if (reasoning.supported === null) gaps.reasoning_unknown.push(model.id)
@@ -178,7 +183,8 @@ export function buildCatalog({ liveModels, docsHtml = "", reasoningEntries = [],
       status: model.status ?? "ready",
       input: model.input ?? ["text"],
       output: model.output ?? ["text"],
-      context_window: docs?.context_window ?? curatedCtx ?? { display: null, tokens: null },
+      // docs > curated vendor fact > assume max (relaxed never-guess rule)
+      context_window: docs?.context_window ?? curatedCtx ?? ASSUMED_MAX_CONTEXT,
       released: docs?.released,
       reasoning,
       recommended: docs?.recommended,
@@ -245,9 +251,9 @@ async function main() {
       live_api: `${API_BASE}/models`,
       docs: DOCS_URL,
       reasoning: "scripts/reasoning-models.json (curated; see entry sources)",
-      context: "scripts/context-models.json (curated, vendor-verified — for new B200-platform models the GWDG docs have not listed yet)",
+      context: "scripts/context-models.json (curated, vendor-verified — more accurate context for new B200-platform models); unknown models assume the platform max (1M)",
       notes:
-        "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them.",
+        "context_window.tokens is derived from the docs display value (k=1e3, M=1e6); the display string preserves the source. External (closed) models are excluded — the SAIA API does not serve them. Live models without a docs row or curated context assume the platform-max context (1048576) instead of being held back.",
     },
     live: { models: liveModels },
     models,

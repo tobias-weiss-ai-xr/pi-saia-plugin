@@ -111,12 +111,14 @@ test("US-C5: buildCatalog merges all three sources and reports every gap honestl
   assert.deepEqual(glm.recommended, { temperature: 1, top_p: 0.95 })
   assert.equal(glm.reasoning.supported, true)
 
-  // model without docs facts: fields null, not guessed
-  assert.deepEqual(fresh.context_window, { display: null, tokens: null })
+  // model without docs facts: assume the platform-max context (relaxed
+  // never-guess rule), reasoning still unknown until curated
+  assert.deepEqual(fresh.context_window, { display: "1M", tokens: 1_048_576 })
   assert.equal(fresh.reasoning.supported, null)
 
-  // gaps: api model without docs row, reasoning unknown for the fresh model
-  assert.deepEqual(gaps.api_without_docs, ["brand-new-model"])
+  // gaps: reasoning is still unknown for the fresh model; the docs-less model is
+  // no longer reported as an API gap (it is registered with assumed max context)
+  assert.deepEqual(gaps.api_without_docs, [])
   assert.deepEqual(gaps.reasoning_unknown, ["brand-new-model"])
   // docs_without_api excludes the closed model, the embeddings row and matched rows
   assert.deepEqual(gaps.docs_without_api, ["DeepSeek V4 Flash"])
