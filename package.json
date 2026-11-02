@@ -17,6 +17,7 @@
     "skills",
     "scripts/sync-saia-models.sh",
     "scripts/collect-saia-model-info.mjs",
+    "scripts/context-models.json",
     "scripts/reasoning-models.json",
     "README.md",
     "CHANGELOG.md",
