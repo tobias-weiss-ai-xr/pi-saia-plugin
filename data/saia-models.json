@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T20:16:25.467Z",
+  "generated_at": "2026-11-03T03:36:46.009Z",
   "sources": {
     "live_api": "https://chat-ai.academiccloud.de/v1/models",
     "docs": "https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html",
@@ -193,7 +193,7 @@
         "created": 1776865347,
         "name": "Qwen 3.5 397B A17B",
         "status": "ready",
-        "demand": 3,
+        "demand": 0,
         "input": [
           "text",
           "image"
@@ -302,12 +302,8 @@
         "thought"
       ],
       "context_window": {
-        "display": "1M",
-        "tokens": 1048576,
-        "sources": [
-          "https://api-docs.deepseek.com/news/",
-          "https://huggingface.co/models?search=DeepSeek"
-        ]
+        "display": "1048576",
+        "tokens": 1048576
       },
       "reasoning": {
         "supported": true,
@@ -345,12 +341,8 @@
         "text"
       ],
       "context_window": {
-        "display": "32K",
-        "tokens": 32768,
-        "sources": [
-          "https://huggingface.co/utter-project/EuroLLM-22B-Instruct-2512",
-          "https://arxiv.org/html/2602.05879v1"
-        ]
+        "display": "32768",
+        "tokens": 32768
       },
       "reasoning": {
         "supported": false,
@@ -386,8 +378,7 @@
     },
     {
       "id": "glm-5.3",
-      "name": "GLM 5.3 Flash",
-      "org": "Z.ai",
+      "name": "GLM 5.3",
       "status": "ready",
       "input": [
         "text"
@@ -400,7 +391,6 @@
         "display": "1M",
         "tokens": 1000000
       },
-      "released": "Feb 2026",
       "reasoning": {
         "supported": true,
         "toggle": {
@@ -424,13 +414,6 @@
           "https://docs.z.ai/guides/vlm/glm-5.3-flash",
           "https://huggingface.co/zai-org/GLM-5.3-Flash"
         ]
-      },
-      "recommended": {
-        "temperature": 1,
-        "top_p": 0.95
-      },
-      "notes": {
-        "advantages": "Multimodal, great coding & agentic performance"
       }
     },
     {
@@ -520,12 +503,8 @@
         "thought"
       ],
       "context_window": {
-        "display": "1M",
-        "tokens": 1048576,
-        "sources": [
-          "https://docs.mistral.ai/models/mistral-large-4",
-          "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B"
-        ]
+        "display": "1048576",
+        "tokens": 1048576
       },
       "reasoning": {
         "supported": true,

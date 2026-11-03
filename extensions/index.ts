@@ -13,7 +13,7 @@
  * curated scripts/reasoning-models.json); output limits, thinking-level maps,
  * categories and the alias table are the generator's "taste" tables.
  *
- * Last sync: 2026-11-02 21:16:25
+ * Last sync: 2026-11-03 04:36:46
  */
 
 import type { ExtensionAPI, ProviderModelConfig } from "@earendil-works/pi-coding-agent";
@@ -99,7 +99,7 @@ export const SAIA_MODELS: ProviderModelConfig[] = [
   },
   {
     id: "glm-5.3",
-    name: "GLM 5.3 Flash (SAIA)",
+    name: "GLM 5.3 (SAIA)",
     reasoning: true,
     thinkingLevelMap: {"minimal":"low","low":"low","medium":"high","high":"high","xhigh":"max","max":"max"},
     compat: { supportsDeveloperRole: false },

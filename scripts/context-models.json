@@ -1,8 +1,16 @@
 {
-  "_comment": "Curated context-window facts (vendor-verified) for live SAIA models that the GWDG docs table has not caught up with yet (the new B200 platform models). Keyed by model id. This is the ONLY fallback when docs.context_window is missing — never a guess, always a cited vendor fact (Release notes / HF model card). This file is the companion to reasoning-models.json (reasoning facts). Docs updates supersede these entries.",
+  "_comment": "Curated context-window facts (vendor-verified) for live SAIA models that the GWDG docs table has not caught up with yet (the new B200 platform models). Keyed by model id. display always round-trips to tokens through parseContextWindow (binary counts like 1,048,576 are written raw). Docs rows supersede these entries; any live model missing here falls back to the assumed platform max (1M) per the relaxed never-guess rule.",
   "entries": {
-    "deepseek-v4.1-flash-1017": {
+    "glm-5.3": {
       "display": "1M",
+      "tokens": 1000000,
+      "sources": [
+        "https://docs.z.ai/guides/vlm/glm-5.3-flash",
+        "https://huggingface.co/zai-org/GLM-5.3-Flash"
+      ]
+    },
+    "deepseek-v4.1-flash-1017": {
+      "display": "1048576",
       "tokens": 1048576,
       "sources": [
         "https://api-docs.deepseek.com/news/",
@@ -10,7 +18,7 @@
       ]
     },
     "mistral-large-4-1t-a52b": {
-      "display": "1M",
+      "display": "1048576",
       "tokens": 1048576,
       "sources": [
         "https://docs.mistral.ai/models/mistral-large-4",
@@ -18,7 +26,7 @@
       ]
     },
     "eurollm-22b-instruct-2512": {
-      "display": "32K",
+      "display": "32768",
       "tokens": 32768,
       "sources": [
         "https://huggingface.co/utter-project/EuroLLM-22B-Instruct-2512",

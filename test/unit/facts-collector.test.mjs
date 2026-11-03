@@ -59,6 +59,11 @@ test("US-C3: docs names match API ids including Instruct-suffix drift", () => {
   ]
   assert.equal(matchDocsRow("gemma-4-31b-it", rows).name, "Gemma 4 31B Instruct")
   assert.equal(matchDocsRow("glm-5.3-flash", rows).name, "GLM 5.3 Flash")
+  // Short id must NOT match a longer docs name: glm-5.3 (base) is a different
+  // model from "GLM 5.3 Flash" — this shipped as a false positive once.
+  assert.equal(matchDocsRow("glm-5.3", rows), undefined)
+  // Dated suffix ids still match the shorter docs name.
+  assert.equal(matchDocsRow("deepseek-v4-flash-0731", [{ name: "DeepSeek V4 Flash", external: false }]).name, "DeepSeek V4 Flash")
   // external (closed) models are never matched, even by name
   assert.equal(matchDocsRow("gpt-5", rows), undefined)
 })
@@ -98,6 +103,7 @@ test("US-C5: buildCatalog merges all three sources and reports every gap honestl
     liveModels,
     docsHtml,
     reasoningEntries: [{ prefix: "glm-5.3", supported: true }],
+    contextWindows: {"brand-new-model": {"display": "1M", "tokens": 1000000, "sources": ["x"]}},
   })
 
   // sorted by id
@@ -111,9 +117,10 @@ test("US-C5: buildCatalog merges all three sources and reports every gap honestl
   assert.deepEqual(glm.recommended, { temperature: 1, top_p: 0.95 })
   assert.equal(glm.reasoning.supported, true)
 
-  // model without docs facts: assume the platform-max context (relaxed
-  // never-guess rule), reasoning still unknown until curated
-  assert.deepEqual(fresh.context_window, { display: "1M", tokens: 1_048_576 })
+  // model without docs facts but with a curated context: curated entry wins
+  // over assumed max, and only display+tokens are merged (sources stay out so
+  // every model's context_window has the same shape)
+  assert.deepEqual(fresh.context_window, { display: "1M", tokens: 1_000_000 })
   assert.equal(fresh.reasoning.supported, null)
 
   // gaps: reasoning is still unknown for the fresh model; the docs-less model is

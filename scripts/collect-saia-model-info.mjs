@@ -130,8 +130,12 @@ export function matchDocsRow(id, docsRows) {
   const candidates = docsRows.filter((row) => !row.external)
   const exact = candidates.find((row) => nameAliases(row.name).includes(target))
   if (exact) return exact
+  // Substring fallback, one direction only: the model id may carry a date/size
+  // suffix the docs name lacks ("deepseek-v4-flash-0731" ⊃ "deepseek-v4-flash").
+  // The reverse (a short id being a substring of a longer docs name, e.g.
+  // "glm-5.3" vs "GLM 5.3 Flash") is a false positive — two different models.
   return candidates.find((row) =>
-    nameAliases(row.name).some((alias) => alias.includes(target) || target.includes(alias)),
+    nameAliases(row.name).some((alias) => target.includes(alias)),
   )
 }
 
@@ -152,12 +156,15 @@ export function reasoningFor(id, entries) {
 // curated context, we assume the maximum context the platform serves rather
 // than holding the model back. The docs/curated values win when known.
 // shortcut: assumes 1M for unknown models; replace if the platform's ceiling grows.
-const ASSUMED_MAX_CONTEXT = { display: "1M", tokens: 1048576 }
+const ASSUMED_MAX_CONTEXT = { display: "1048576", tokens: 1048576 }
 
 // Curated, vendor-verified context window for a live model the GWDG docs have
-// not caught up with (the new B200 platform models). Never a guess.
+// not caught up with (the new B200 platform models). Only display+tokens are
+// merged into context_window — sources stay in the curated file and in
+// catalog.sources.context, so every model's context_window has the same shape.
 export function contextFor(id, contextWindows) {
-  return contextWindows?.[id] ?? null
+  const entry = contextWindows?.[id]
+  return entry ? { display: entry.display, tokens: entry.tokens } : null
 }
 
 // Merge live API models with parsed docs rows and curated reasoning entries.
